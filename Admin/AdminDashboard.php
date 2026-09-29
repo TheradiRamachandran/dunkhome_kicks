@@ -1,18 +1,16 @@
 <?php
 declare(strict_types=1);
 
-require_once __DIR__ . '/db.php';
-
-if (session_status() !== PHP_SESSION_ACTIVE) {
-    session_start();
-}
+require_once __DIR__ . '/../db.php';
+require_once __DIR__ . '/../session.php';
+require_once __DIR__ . '/../includes/order_helpers.php';
 
 /* =========================================================
    ADMIN AUTHENTICATION
    ========================================================= */
 
 if (!isset($_SESSION['admin_id'])) {
-    header('Location: AdminSignIn.php');
+    header('Location: ' . appUrl('Admin/AdminSignIn.php'));
     exit;
 }
 
@@ -43,7 +41,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
 
     session_destroy();
 
-    header('Location: AdminSignIn.php');
+    header('Location: ' . appUrl('Admin/AdminSignIn.php'));
     exit;
 }
 
@@ -95,6 +93,42 @@ function formatDate(string $date): string
     return date('M d, Y · h:i A', $time);
 }
 
+function loadDashboardOrderData(mysqli $conn): array
+{
+    $totalColumn = tableHasColumn($conn, 'orders', 'total') ? 'total' : 'total_amount';
+    $codeExpression = tableHasColumn($conn, 'orders', 'order_code') ? 'order_code' : 'CAST(id AS CHAR)';
+    $stats = ['total' => 0, 'pending' => 0, 'delivered' => 0, 'income' => 0.0];
+    $result = $conn->query(
+        "SELECT COUNT(*) AS total,
+                COALESCE(SUM(status = 'Pending'), 0) AS pending,
+                COALESCE(SUM(status = 'Delivered'), 0) AS delivered,
+                COALESCE(SUM(CASE WHEN status = 'Delivered' THEN {$totalColumn} ELSE 0 END), 0) AS income
+         FROM orders"
+    );
+    if ($result) {
+        $row = $result->fetch_assoc();
+        $stats = [
+            'total' => (int) ($row['total'] ?? 0),
+            'pending' => (int) ($row['pending'] ?? 0),
+            'delivered' => (int) ($row['delivered'] ?? 0),
+            'income' => (float) ($row['income'] ?? 0),
+        ];
+    }
+
+    $orders = [];
+    $result = $conn->query(
+        'SELECT id, ' . $codeExpression . ' AS order_code, customer_name, ' . $totalColumn . ' AS total, status, created_at
+         FROM orders ORDER BY created_at DESC LIMIT 8'
+    );
+    if ($result) {
+        while ($row = $result->fetch_assoc()) {
+            $orders[] = $row;
+        }
+    }
+
+    return ['stats' => $stats, 'orders' => $orders];
+}
+
 /* =========================================================
    VERIFY ADMIN
    ========================================================= */
@@ -124,181 +158,25 @@ if (!$currentAdmin) {
 
     session_destroy();
 
-    header('Location: AdminSignIn.php');
+    header('Location: ' . appUrl('Admin/AdminSignIn.php'));
     exit;
 }
 
 $adminEmail = (string) $currentAdmin['email'];
 $adminInitials = getInitials($adminEmail);
+$dashboardData = loadDashboardOrderData($conn);
+$orderStats = $dashboardData['stats'];
+$recentOrders = $dashboardData['orders'];
 
-/* =========================================================
-   DASHBOARD STATISTICS
-   ========================================================= */
-
-$totalUsers = 0;
-$totalAdmins = 0;
-$usersToday = 0;
-$adminsToday = 0;
-
-/* Total users */
-
-$result = $conn->query(
-    "SELECT COUNT(*) AS total
-     FROM users"
-);
-
-if ($result) {
-    $row = $result->fetch_assoc();
-    $totalUsers = (int) ($row['total'] ?? 0);
-}
-
-/* Total administrators */
-
-$result = $conn->query(
-    "SELECT COUNT(*) AS total
-     FROM admins"
-);
-
-if ($result) {
-    $row = $result->fetch_assoc();
-    $totalAdmins = (int) ($row['total'] ?? 0);
-}
-
-/* Users registered today */
-
-$result = $conn->query(
-    "SELECT COUNT(*) AS total
-     FROM users
-     WHERE DATE(created_at) = CURDATE()"
-);
-
-if ($result) {
-    $row = $result->fetch_assoc();
-    $usersToday = (int) ($row['total'] ?? 0);
-}
-
-/* Admins registered today */
-
-$result = $conn->query(
-    "SELECT COUNT(*) AS total
-     FROM admins
-     WHERE DATE(created_at) = CURDATE()"
-);
-
-if ($result) {
-    $row = $result->fetch_assoc();
-    $adminsToday = (int) ($row['total'] ?? 0);
-}
-
-/* =========================================================
-   RECENT USERS
-   ========================================================= */
-
-$recentUsers = [];
-
-$result = $conn->query(
-    "SELECT id, email, created_at
-     FROM users
-     ORDER BY created_at DESC
-     LIMIT 8"
-);
-
-if ($result) {
-
-    while ($row = $result->fetch_assoc()) {
-        $recentUsers[] = $row;
-    }
-}
-
-/* =========================================================
-   RECENT ADMINS
-   ========================================================= */
-
-$recentAdmins = [];
-
-$result = $conn->query(
-    "SELECT id, email, created_at
-     FROM admins
-     ORDER BY created_at DESC
-     LIMIT 6"
-);
-
-if ($result) {
-
-    while ($row = $result->fetch_assoc()) {
-        $recentAdmins[] = $row;
-    }
-}
-
-/* =========================================================
-   USER SEARCH AJAX
-   ========================================================= */
-
-if (
-    isset($_GET['action']) &&
-    $_GET['action'] === 'search_users'
-) {
-
+if (($_GET['action'] ?? '') === 'live_orders') {
     header('Content-Type: application/json; charset=utf-8');
-
-    $query = trim((string) ($_GET['q'] ?? ''));
-
-    if ($query === '') {
-
-        echo json_encode([
-            'status' => 'success',
-            'users' => []
-        ]);
-
-        exit;
-    }
-
-    $search = '%' . $query . '%';
-
-    $stmt = $conn->prepare(
-        "SELECT id, email, created_at
-         FROM users
-         WHERE email LIKE ?
-         ORDER BY created_at DESC
-         LIMIT 10"
-    );
-
-    if (!$stmt) {
-
-        echo json_encode([
-            'status' => 'error',
-            'message' => 'Search unavailable.'
-        ]);
-
-        exit;
-    }
-
-    $stmt->bind_param('s', $search);
-    $stmt->execute();
-
-    $result = $stmt->get_result();
-
-    $users = [];
-
-    if ($result) {
-
-        while ($row = $result->fetch_assoc()) {
-
-            $users[] = [
-                'id' => (int) $row['id'],
-                'email' => (string) $row['email'],
-                'created_at' => (string) $row['created_at']
-            ];
-        }
-    }
-
-    $stmt->close();
-
+    header('Cache-Control: no-store, private');
     echo json_encode([
         'status' => 'success',
-        'users' => $users
+        'stats' => $orderStats,
+        'orders' => $recentOrders,
+        'updated_at' => date(DATE_ATOM),
     ]);
-
     exit;
 }
 
@@ -306,7 +184,7 @@ if (
 <!DOCTYPE html>
 <html lang="en">
 
-<head>
+<head><base href="<?= h(appBaseUrl()) ?>">
 
     <meta charset="UTF-8">
 
@@ -1294,6 +1172,19 @@ a {
         14px;
 }
 
+.dashboard-stack {
+    display:grid;
+    gap:14px;
+    align-content:start;
+}
+
+.empty-state {
+    padding:20px 18px;
+    color:#819089;
+    font-size:10px;
+    line-height:1.6;
+}
+
 .panel {
 
     min-width:
@@ -2222,8 +2113,64 @@ tr:hover td {
     }
 }
 
+body.light {
+    --bg:#f2f8f3;
+    --bg2:#e8f2eb;
+    --panel:rgba(255,255,255,.82);
+    --panel-soft:rgba(20,48,31,.035);
+    --white:#18251d;
+    --text:#405148;
+    --muted:#617168;
+    --muted2:#74837a;
+    --line:rgba(20,48,31,.13);
+    --line2:rgba(20,48,31,.2);
+    --shadow:0 20px 55px rgba(28,55,38,.12);
+    color:var(--white);
+    background:radial-gradient(circle at 8% 0%,rgba(73,204,134,.15),transparent 25%),linear-gradient(135deg,#f2f8f3,#e8f2eb 50%,#f7faf7);
+}
+
+body.light::before { opacity:.045; }
+body.light .sidebar { background:rgba(249,252,249,.97); }
+body.light .brand-name,
+body.light .page-label strong,
+body.light .hero h1,
+body.light .stat-number,
+body.light .panel-head h2 { color:#18251d; }
+body.light .nav-title,
+body.light .nav-link { color:#5a6d61; }
+body.light .nav-link:hover { color:#17251d; background:rgba(20,48,31,.045); }
+body.light .topbar { background:rgba(249,252,249,.9); }
+body.light .hero,
+body.light .stat,
+body.light .panel { border-color:var(--line); background:rgba(255,255,255,.76); }
+body.light .hero p,
+body.light .stat-label,
+body.light .stat-foot,
+body.light .panel-head p,
+body.light .date,
+body.light .empty-state { color:#66766c; }
+body.light .admin-info strong { color:#18251d; }
+body.light .admin-info span { color:#65756b; }
+body.light .user-email,
+body.light th,
+body.light td { color:#34453b; }
+body.light th,
+body.light td { border-bottom-color:rgba(20,48,31,.09); }
+body.light .id { color:#52645a; border-color:var(--line); background:rgba(20,48,31,.035); }
+body.light .panel-link { color:#276c48; }
+body.light .icon-btn { color:#42564a; border-color:var(--line); background:rgba(255,255,255,.78); }
+body.light .icon-btn:hover { color:#155b39; background:rgba(73,204,134,.11); }
+.live-status { color:#819089; font-size:9px; white-space:nowrap; }
+.theme-toggle { font-size:16px; }
+body.light .live-status { color:#62746a; }
+
+@media (max-width: 760px) {
+    .live-status { display:none; }
+}
+
 </style>
     <link rel="stylesheet" href="assets/dunkhome-ui.css">
+    <link rel="stylesheet" href="assets/admin-navigation.css">
 </head>
 
 <body>
@@ -2238,7 +2185,7 @@ tr:hover td {
 
     <aside class="sidebar" id="sidebar">
 
-        <a href="AdminDashboard.php" class="brand">
+        <a href="<?= h(appUrl('Admin/AdminDashboard.php')) ?>" class="brand" aria-label="Dashboard home">
 
             <img
                 src="image/logo.jpeg"
@@ -2257,63 +2204,7 @@ tr:hover td {
         </div>
 
         <nav class="nav">
-
-            <a
-                href="AdminDashboard.php"
-                class="nav-link active"
-            >
-                <i class="fa-solid fa-grid-2"></i>
-                Dashboard
-            </a>
-
-            <a
-                href="#users"
-                class="nav-link"
-            >
-                <i class="fa-solid fa-users"></i>
-                Users
-            </a>
-
-            <a
-                href="#admins"
-                class="nav-link"
-            >
-                <i class="fa-solid fa-user-shield"></i>
-                Administrators
-            </a>
-
-            <a
-                href="index.php"
-                class="nav-link"
-            >
-                <i class="fa-solid fa-globe"></i>
-                View website
-            </a>
-
-            <a
-                href="SignUp.php"
-                class="nav-link"
-            >
-                <i class="fa-solid fa-user-plus"></i>
-                User signup
-            </a>
-
-            <a
-                href="Products.php"
-                class="nav-link"
-            >
-                <i class="fa-solid fa-shoe-prints"></i>
-                Products
-            </a>
-
-            <a
-                href="AddProduct.php"
-                class="nav-link"
-            >
-                <i class="fa-solid fa-plus"></i>
-                Add product
-            </a>
-
+            <?php require __DIR__ . '/../includes/nav.php'; ?>
         </nav>
 
         <div class="sidebar-bottom">
@@ -2337,14 +2228,6 @@ tr:hover td {
                 </div>
 
             </div>
-
-            <a
-                href="AdminDashboard.php?action=logout"
-                class="nav-link logout"
-            >
-                <i class="fa-solid fa-arrow-right-from-bracket"></i>
-                Sign out
-            </a>
 
         </div>
 
@@ -2381,24 +2264,34 @@ tr:hover td {
 
             <div class="actions">
 
+                <span class="live-status" id="ordersUpdatedAt" aria-live="polite">Live updates starting…</span>
+
                 <button
                     type="button"
-                    class="icon-btn"
-                    id="refreshButton"
-                    title="Refresh"
-                    aria-label="Refresh"
-                >
-                    <i class="fa-solid fa-rotate-right"></i>
-                </button>
+                    class="icon-btn theme-toggle"
+                    id="themeToggle"
+                    title="Toggle theme"
+                    aria-label="Switch to light theme"
+                >☀️</button>
 
                 <a
-                    href="AdminDashboard.php?action=logout"
+                    href="Logout.php?scope=admin"
                     class="icon-btn"
                     title="Sign out"
                     aria-label="Sign out"
                 >
                     <i class="fa-solid fa-arrow-right-from-bracket"></i>
                 </a>
+
+                <button
+                    type="button"
+                    class="icon-btn"
+                    id="refreshButton"
+                    title="Refresh order data"
+                    aria-label="Refresh order data"
+                >
+                    <i class="fa-solid fa-rotate-right"></i>
+                </button>
 
             </div>
 
@@ -2421,10 +2314,7 @@ tr:hover td {
                 </h1>
 
                 <p>
-                    Manage your DunkHome Kicks account ecosystem from
-                    one secure and elegant administration portal.
-                    Monitor registered users and administrator accounts
-                    in real time.
+                    Track order activity, fulfillment, sales, and the product catalog.
                 </p>
 
             </section>
@@ -2440,24 +2330,25 @@ tr:hover td {
                     <div class="stat-head">
 
                         <span class="stat-label">
-                            Total users
+                            Total orders
                         </span>
 
                         <span class="stat-icon">
-                            <i class="fa-solid fa-users"></i>
+                            <i class="fa-solid fa-box"></i>
                         </span>
 
                     </div>
 
                     <div
                         class="stat-number"
-                        data-counter="<?= $totalUsers ?>"
+                        id="totalOrdersCount"
+                        data-counter="<?= $orderStats['total'] ?>"
                     >
                         0
                     </div>
 
                     <div class="stat-foot">
-                        Registered accounts
+                        All order records
                     </div>
 
                 </article>
@@ -2467,24 +2358,25 @@ tr:hover td {
                     <div class="stat-head">
 
                         <span class="stat-label">
-                            New today
+                            Pending orders
                         </span>
 
                         <span class="stat-icon">
-                            <i class="fa-solid fa-user-plus"></i>
+                            <i class="fa-solid fa-clock"></i>
                         </span>
 
                     </div>
 
                     <div
                         class="stat-number"
-                        data-counter="<?= $usersToday ?>"
+                        id="pendingOrdersCount"
+                        data-counter="<?= $orderStats['pending'] ?>"
                     >
                         0
                     </div>
 
                     <div class="stat-foot">
-                        Users registered today
+                        Awaiting fulfillment
                     </div>
 
                 </article>
@@ -2494,24 +2386,25 @@ tr:hover td {
                     <div class="stat-head">
 
                         <span class="stat-label">
-                            Administrators
+                            Delivered orders
                         </span>
 
                         <span class="stat-icon">
-                            <i class="fa-solid fa-user-shield"></i>
+                            <i class="fa-solid fa-truck-fast"></i>
                         </span>
 
                     </div>
 
                     <div
                         class="stat-number"
-                        data-counter="<?= $totalAdmins ?>"
+                        id="deliveredOrdersCount"
+                        data-counter="<?= $orderStats['delivered'] ?>"
                     >
                         0
                     </div>
 
                     <div class="stat-foot">
-                        Admin accounts
+                        Successfully delivered
                     </div>
 
                 </article>
@@ -2521,24 +2414,21 @@ tr:hover td {
                     <div class="stat-head">
 
                         <span class="stat-label">
-                            Admins today
+                            Income
                         </span>
 
                         <span class="stat-icon">
-                            <i class="fa-solid fa-crown"></i>
+                            <i class="fa-solid fa-indian-rupee-sign"></i>
                         </span>
 
                     </div>
 
-                    <div
-                        class="stat-number"
-                        data-counter="<?= $adminsToday ?>"
-                    >
-                        0
+                    <div class="stat-number" id="incomeAmount">
+                        ₹<?= number_format($orderStats['income'], 2) ?>
                     </div>
 
                     <div class="stat-foot">
-                        Created today
+                        From delivered orders
                     </div>
 
                 </article>
@@ -2550,301 +2440,63 @@ tr:hover td {
                  ================================================= -->
 
             <section class="dashboard-grid">
-
-                <!-- USERS -->
-
-                <article
-                    class="panel"
-                    id="users"
-                >
-
+                <article class="panel" id="recent-orders">
                     <div class="panel-head">
-
                         <div>
-
-                            <h2>
-                                Recent users
-                            </h2>
-
-                            <p>
-                                Latest accounts registered
-                            </p>
-
+                            <h2>Recent orders</h2>
+                            <p>Latest customer orders and fulfillment state</p>
                         </div>
-
+                        <a href="Admin/AdminOrders.php" class="panel-link">Manage orders</a>
                     </div>
-
-                    <div class="search-box">
-
-                        <div class="search">
-
-                            <i class="fa-solid fa-magnifying-glass"></i>
-
-                            <input
-                                type="search"
-                                id="userSearch"
-                                placeholder="Search users by email..."
-                                autocomplete="off"
-                            >
-
-                        </div>
-
-                        <div
-                            class="search-results"
-                            id="searchResults"
-                        ></div>
-
-                    </div>
-
                     <div class="table-wrap">
-
                         <table>
-
                             <thead>
-
                                 <tr>
-                                    <th>User</th>
-                                    <th>ID</th>
-                                    <th>Registered</th>
+                                    <th>Order</th>
+                                    <th>Customer</th>
+                                    <th>Total</th>
+                                    <th>Status</th>
+                                    <th>Placed</th>
+                                    <th></th>
                                 </tr>
-
                             </thead>
-
-                            <tbody>
-
-                            <?php if (!$recentUsers): ?>
-
-                                <tr>
-
-                                    <td
-                                        colspan="3"
-                                        style="
-                                            text-align:center;
-                                            color:#607068;
-                                            padding:28px;
-                                        "
-                                    >
-                                        No users registered yet.
-                                    </td>
-
-                                </tr>
-
+                            <tbody id="recentOrdersBody">
+                            <?php if (!$recentOrders): ?>
+                                <tr><td colspan="6" style="text-align:center;color:#819089;padding:28px">No orders have been placed yet.</td></tr>
                             <?php else: ?>
-
-                                <?php foreach ($recentUsers as $user): ?>
-
+                                <?php foreach ($recentOrders as $order): ?>
                                     <tr>
-
-                                        <td>
-
-                                            <div class="user">
-
-                                                <div class="user-avatar">
-                                                    <?= e(
-                                                        getInitials(
-                                                            (string) $user['email']
-                                                        )
-                                                    ) ?>
-                                                </div>
-
-                                                <div class="user-email">
-
-                                                    <?= e(
-                                                        (string) $user['email']
-                                                    ) ?>
-
-                                                </div>
-
-                                            </div>
-
-                                        </td>
-
-                                        <td>
-
-                                            <span class="id">
-                                                #<?= (int) $user['id'] ?>
-                                            </span>
-
-                                        </td>
-
-                                        <td class="date">
-
-                                            <?= e(
-                                                formatDate(
-                                                    (string) $user['created_at']
-                                                )
-                                            ) ?>
-
-                                        </td>
-
+                                        <td><span class="id"><?= e((string) $order['order_code']) ?></span></td>
+                                        <td><?= e((string) $order['customer_name']) ?></td>
+                                        <td>₹<?= number_format((float) $order['total'], 2) ?></td>
+                                        <td><?= e((string) $order['status']) ?></td>
+                                        <td class="date"><?= e(formatDate((string) $order['created_at'])) ?></td>
+                                        <td><a class="panel-link" href="Admin/AdminOrderDetails.php?code=<?= rawurlencode((string) $order['order_code']) ?>">View</a></td>
                                     </tr>
-
                                 <?php endforeach; ?>
-
                             <?php endif; ?>
-
                             </tbody>
-
                         </table>
-
                     </div>
-
                 </article>
 
-                <!-- ADMINISTRATORS -->
-
-                <article
-                    class="panel"
-                    id="admins"
-                >
-
-                    <div class="panel-head">
-
-                        <div>
-
-                            <h2>
-                                Administrators
-                            </h2>
-
-                            <p>
-                                Accounts with admin access
-                            </p>
-
+                <div class="dashboard-stack">
+                    <article class="panel">
+                        <div class="panel-head">
+                            <div><h2>Reviews</h2><p>Customer product feedback</p></div>
+                            <a href="Admin/AdminReviews.php" class="panel-link">Open</a>
                         </div>
+                        <div class="empty-state">Reviews are not collected by the current site yet.</div>
+                    </article>
 
-                        <a
-                            href="AdminSignUp.php"
-                            class="panel-link"
-                        >
-                            Add admin
-                        </a>
-
-                    </div>
-
-                    <div class="admin-list">
-
-                    <?php if (!$recentAdmins): ?>
-
-                        <div
-                            style="
-                                padding:28px 16px;
-                                color:#607068;
-                                text-align:center;
-                                font-size:9px;
-                            "
-                        >
-                            No administrator accounts found.
+                    <article class="panel">
+                        <div class="panel-head">
+                            <div><h2>Contact</h2><p>Public support information</p></div>
+                            <a href="User/Contact.php" class="panel-link">View page</a>
                         </div>
-
-                    <?php else: ?>
-
-                        <?php foreach ($recentAdmins as $recentAdmin): ?>
-
-                            <div class="admin-row">
-
-                                <div class="admin-avatar">
-
-                                    <?= e(
-                                        getInitials(
-                                            (string) $recentAdmin['email']
-                                        )
-                                    ) ?>
-
-                                </div>
-
-                                <div class="admin-text">
-
-                                    <strong>
-                                        <?= e(
-                                            (string) $recentAdmin['email']
-                                        ) ?>
-                                    </strong>
-
-                                    <span>
-                                        Created
-                                        <?= e(
-                                            formatDate(
-                                                (string) $recentAdmin['created_at']
-                                            )
-                                        ) ?>
-                                    </span>
-
-                                </div>
-
-                                <?php if (
-                                    (int) $recentAdmin['id'] === $adminId
-                                ): ?>
-
-                                    <span class="you">
-                                        YOU
-                                    </span>
-
-                                <?php endif; ?>
-
-                            </div>
-
-                        <?php endforeach; ?>
-
-                    <?php endif; ?>
-
-                    </div>
-
-                    <!-- QUICK ACTIONS -->
-
-                    <div class="panel-head">
-
-                        <div>
-
-                            <h2>
-                                Quick actions
-                            </h2>
-
-                            <p>
-                                Frequently used controls
-                            </p>
-
-                        </div>
-
-                    </div>
-
-                    <div class="quick">
-
-                        <a href="AdminSignUp.php">
-
-                            <i class="fa-solid fa-user-shield"></i>
-
-                            Add administrator
-
-                        </a>
-
-                        <a href="index.php">
-
-                            <i class="fa-solid fa-globe"></i>
-
-                            Open website
-
-                        </a>
-
-                        <a href="SignUp.php">
-
-                            <i class="fa-solid fa-user-plus"></i>
-
-                            User signup
-
-                        </a>
-
-                        <a href="AdminDashboard.php?action=logout">
-
-                            <i class="fa-solid fa-lock"></i>
-
-                            Secure sign out
-
-                        </a>
-
-                    </div>
-
-                </article>
-
+                        <div class="empty-state">The contact page is live. This site does not have a message inbox.</div>
+                    </article>
+                </div>
             </section>
 
         </main>
@@ -2902,6 +2554,17 @@ sidebar?.querySelectorAll('a').forEach(
     }
 );
 
+const sidebarBrand = sidebar?.querySelector('.brand');
+sidebarBrand?.addEventListener('click', event => {
+    if (
+        window.matchMedia('(max-width: 760px)').matches &&
+        document.body.classList.contains('sidebar-open')
+    ) {
+        event.preventDefault();
+        closeSidebar();
+    }
+});
+
 /* =========================================================
    REFRESH
    ========================================================= */
@@ -2909,23 +2572,91 @@ sidebar?.querySelectorAll('a').forEach(
 const refreshButton =
     document.getElementById('refreshButton');
 
-refreshButton?.addEventListener(
-    'click',
-    () => {
+const ordersUpdatedAt = document.getElementById('ordersUpdatedAt');
+const recentOrdersBody = document.getElementById('recentOrdersBody');
+let refreshingOrders = false;
 
-        refreshButton.classList.add(
-            'spinning'
-        );
+function addOrderCell(row, value, className = '') {
+    const cell = document.createElement('td');
+    if (className) cell.className = className;
+    cell.textContent = value;
+    row.appendChild(cell);
+    return cell;
+}
 
-        setTimeout(
-            () => {
-                window.location.reload();
-            },
-            250
-        );
+function renderRecentOrders(orders) {
+    recentOrdersBody.replaceChildren();
 
+    if (!orders.length) {
+        const row = document.createElement('tr');
+        const cell = addOrderCell(row, 'No orders have been placed yet.');
+        cell.colSpan = 6;
+        cell.style.textAlign = 'center';
+        cell.style.padding = '28px';
+        recentOrdersBody.appendChild(row);
+        return;
     }
-);
+
+    orders.forEach(order => {
+        const row = document.createElement('tr');
+        addOrderCell(row, `#${String(order.order_code ?? '')}`, 'id');
+        addOrderCell(row, String(order.customer_name ?? ''));
+        addOrderCell(row, `₹${Number(order.total ?? 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+        addOrderCell(row, String(order.status ?? ''));
+
+        const placed = new Date(String(order.created_at ?? '').replace(' ', 'T'));
+        const placedText = Number.isNaN(placed.getTime())
+            ? String(order.created_at ?? '')
+            : new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(placed);
+        addOrderCell(row, placedText, 'date');
+
+        const actionCell = document.createElement('td');
+        const link = document.createElement('a');
+        link.className = 'panel-link';
+        link.href = `Admin/AdminOrderDetails.php?code=${encodeURIComponent(String(order.order_code ?? ''))}`;
+        link.textContent = 'View';
+        actionCell.appendChild(link);
+        row.appendChild(actionCell);
+        recentOrdersBody.appendChild(row);
+    });
+}
+
+async function refreshDashboardOrders() {
+    if (refreshingOrders) return;
+    refreshingOrders = true;
+    refreshButton.disabled = true;
+    refreshButton.classList.add('spinning');
+
+    try {
+        const response = await fetch('Admin/AdminDashboard.php?action=live_orders', {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            cache: 'no-store'
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        const data = await response.json();
+        if (data.status !== 'success') throw new Error('Order data unavailable');
+
+        document.getElementById('totalOrdersCount').textContent = Number(data.stats.total || 0).toLocaleString();
+        document.getElementById('pendingOrdersCount').textContent = Number(data.stats.pending || 0).toLocaleString();
+        document.getElementById('deliveredOrdersCount').textContent = Number(data.stats.delivered || 0).toLocaleString();
+        document.getElementById('incomeAmount').textContent = `₹${Number(data.stats.income || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        renderRecentOrders(Array.isArray(data.orders) ? data.orders : []);
+        ordersUpdatedAt.textContent = `Updated ${new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit', second: '2-digit' }).format(new Date(data.updated_at))}`;
+    } catch (error) {
+        ordersUpdatedAt.textContent = 'Live update unavailable';
+    } finally {
+        refreshButton.disabled = false;
+        refreshButton.classList.remove('spinning');
+        refreshingOrders = false;
+    }
+}
+
+refreshButton?.addEventListener('click', refreshDashboardOrders);
+refreshDashboardOrders();
+window.setInterval(() => {
+    if (!document.hidden) refreshDashboardOrders();
+}, 8000);
 
 /* =========================================================
    ANIMATED COUNTERS
@@ -2988,271 +2719,6 @@ document
         );
 
     });
-
-/* =========================================================
-   USER SEARCH
-   ========================================================= */
-
-const searchInput =
-    document.getElementById('userSearch');
-
-const searchResults =
-    document.getElementById('searchResults');
-
-let searchTimer = null;
-
-let searchController = null;
-
-function escapeHtml(value) {
-
-    return String(value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
-}
-
-function hideSearchResults() {
-
-    searchResults.classList.remove(
-        'show'
-    );
-
-    searchResults.innerHTML = '';
-}
-
-function getInitials(email) {
-
-    const name =
-        String(email)
-            .split('@')[0]
-            .replace(
-                /[^a-zA-Z0-9]+/g,
-                ' '
-            )
-            .trim();
-
-    if (!name) {
-        return 'US';
-    }
-
-    const parts =
-        name.split(/\s+/);
-
-    if (parts.length >= 2) {
-
-        return (
-            parts[0][0] +
-            parts[1][0]
-        ).toUpperCase();
-    }
-
-    return name
-        .substring(0, 2)
-        .toUpperCase();
-}
-
-async function searchUsers(query) {
-
-    if (!query) {
-
-        hideSearchResults();
-
-        return;
-    }
-
-    if (searchController) {
-
-        searchController.abort();
-    }
-
-    searchController =
-        new AbortController();
-
-    try {
-
-        const response =
-            await fetch(
-                `AdminDashboard.php?action=search_users&q=${encodeURIComponent(query)}`,
-                {
-                    signal:
-                        searchController.signal,
-
-                    headers: {
-                        'X-Requested-With':
-                            'XMLHttpRequest'
-                    }
-                }
-            );
-
-        if (!response.ok) {
-            throw new Error(
-                'Request failed'
-            );
-        }
-
-        const data =
-            await response.json();
-
-        if (
-            data.status !== 'success' ||
-            !Array.isArray(data.users)
-        ) {
-
-            hideSearchResults();
-
-            return;
-        }
-
-        if (!data.users.length) {
-
-            searchResults.innerHTML = `
-                <div
-                    class="search-result"
-                    style="cursor:default;"
-                >
-                    <div class="result-text">
-                        <strong>
-                            No matching users
-                        </strong>
-
-                        <span>
-                            Try another email.
-                        </span>
-                    </div>
-                </div>
-            `;
-
-            searchResults.classList.add(
-                'show'
-            );
-
-            return;
-        }
-
-        searchResults.innerHTML =
-            data.users.map(user => `
-
-                <div
-                    class="search-result"
-                    data-email="${escapeHtml(user.email)}"
-                >
-
-                    <div class="result-avatar">
-                        ${escapeHtml(
-                            getInitials(user.email)
-                        )}
-                    </div>
-
-                    <div class="result-text">
-
-                        <strong>
-                            ${escapeHtml(user.email)}
-                        </strong>
-
-                        <span>
-                            User #${Number(user.id)}
-                        </span>
-
-                    </div>
-
-                </div>
-
-            `).join('');
-
-        searchResults.classList.add(
-            'show'
-        );
-
-        searchResults
-            .querySelectorAll(
-                '.search-result[data-email]'
-            )
-            .forEach(item => {
-
-                item.addEventListener(
-                    'click',
-                    () => {
-
-                        searchInput.value =
-                            item.dataset.email || '';
-
-                        hideSearchResults();
-
-                        searchInput.focus();
-                    }
-                );
-
-            });
-
-    } catch (error) {
-
-        if (
-            error.name !==
-            'AbortError'
-        ) {
-
-            hideSearchResults();
-        }
-    }
-}
-
-searchInput?.addEventListener(
-    'input',
-    () => {
-
-        clearTimeout(
-            searchTimer
-        );
-
-        const query =
-            searchInput.value.trim();
-
-        searchTimer =
-            setTimeout(
-                () => {
-                    searchUsers(query);
-                },
-                180
-            );
-    }
-);
-
-searchInput?.addEventListener(
-    'keydown',
-    event => {
-
-        if (
-            event.key ===
-            'Escape'
-        ) {
-
-            hideSearchResults();
-
-            searchInput.blur();
-        }
-    }
-);
-
-document.addEventListener(
-    'click',
-    event => {
-
-        if (
-            searchResults &&
-            searchInput &&
-            !searchResults.contains(
-                event.target
-            ) &&
-            event.target !==
-                searchInput
-        ) {
-
-            hideSearchResults();
-        }
-    }
-);
 
 </script>
 

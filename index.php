@@ -16,7 +16,7 @@ $userLoggedIn  = userLoggedIn();
 $adminLoggedIn = adminLoggedIn();
 
 $featuredProducts = [];
-$productResult = $conn->query('SELECT id,name,category,price,description,image1 FROM products ORDER BY created_at DESC LIMIT 6');
+$productResult = $conn->query('SELECT id,name,category,price,description,image1 FROM products WHERE is_active=1 ORDER BY created_at DESC LIMIT 6');
 if ($productResult) { while ($row = $productResult->fetch_assoc()) { $featuredProducts[] = $row; } }
 
 $userName = $_SESSION['username'] ?? $_SESSION['name'] ?? 'Customer';
@@ -24,7 +24,7 @@ $userName = $_SESSION['username'] ?? $_SESSION['name'] ?? 'Customer';
 
 <!DOCTYPE html>
 <html lang="en">
-<head>
+<head><base href="<?= h(appBaseUrl()) ?>">
     <meta charset="UTF-8">
 
     <meta
@@ -1579,17 +1579,19 @@ $userName = $_SESSION['username'] ?? $_SESSION['name'] ?? 'Customer';
 
         <nav class="nav-links" id="navLinks">
 
-            <a href="Home.php">Home</a>
+            <a href="User/Home.php">Home</a>
 
-            <a href="Products.php">Categories</a>
+            <a href="User/Products.php">Categories</a>
 
-            <a href="Products.php">Featured</a>
+            <a href="User/Products.php">Featured</a>
 
-            <a href="Home.php#about">About</a>
+            <a href="User/Cart.php">Cart</a>
+
+            <a href="User/Home.php#about">About</a>
 
             <?php if ($adminLoggedIn): ?>
 
-                <a href="AdminDashboard.php">
+                <a href="Admin/AdminDashboard.php">
                     Admin Dashboard
                 </a>
 
@@ -1614,16 +1616,18 @@ $userName = $_SESSION['username'] ?? $_SESSION['name'] ?? 'Customer';
             <?php if ($userLoggedIn): ?>
 
                 <a
-                    href="Dashboard.php"
+                    href="User/Dashboard.php"
                     class="btn btn-primary btn-small"
                 >
                     Dashboard
                 </a>
 
+                <a href="User/OrderHistory.php" class="btn btn-outline btn-small">My bookings</a>
+
             <?php else: ?>
 
                 <a
-                    href="SignIn.php"
+                    href="User/SignIn.php"
                     class="btn btn-primary btn-small"
                 >
                     Sign In
@@ -1688,7 +1692,7 @@ $userName = $_SESSION['username'] ?? $_SESSION['name'] ?? 'Customer';
                     <?php if ($userLoggedIn): ?>
 
                         <a
-                            href="Dashboard.php"
+                            href="User/Dashboard.php"
                             class="btn btn-primary"
                         >
                             Explore Collection →
@@ -1697,7 +1701,7 @@ $userName = $_SESSION['username'] ?? $_SESSION['name'] ?? 'Customer';
                     <?php else: ?>
 
                         <a
-                            href="SignUp.php"
+                            href="User/SignUp.php"
                             class="btn btn-primary"
                         >
                             Start Shopping →
@@ -1898,7 +1902,13 @@ $userName = $_SESSION['username'] ?? $_SESSION['name'] ?? 'Customer';
                                 <p><?= htmlspecialchars((string)$product['description'], ENT_QUOTES, 'UTF-8') ?></p>
                                 <div class="product-bottom">
                                     <span class="price">₹<?= number_format((float)$product['price'], 2) ?></span>
-                                    <a href="ProductDetails.php?id=<?= (int)$product['id'] ?>" class="btn btn-outline btn-small">Discover</a>
+                                    <a href="User/ProductDetails.php?id=<?= (int)$product['id'] ?>" class="btn btn-outline btn-small">Discover</a>
+                                    <form method="post" action="User/Cart.php" style="display:inline">
+                                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrfToken(), ENT_QUOTES, 'UTF-8') ?>">
+                                        <input type="hidden" name="action" value="add">
+                                        <input type="hidden" name="product_id" value="<?= (int)$product['id'] ?>">
+                                        <button type="submit" class="btn btn-primary btn-small">Add to cart</button>
+                                    </form>
                                 </div>
                             </div>
                         </article>
@@ -1910,7 +1920,7 @@ $userName = $_SESSION['username'] ?? $_SESSION['name'] ?? 'Customer';
                             <div class="product-label">Collection</div>
                             <h3>Products coming soon</h3>
                             <p>Our administrator will add the first DunkHome Kicks products here.</p>
-                            <div class="product-bottom"><span class="price">Explore</span><a href="Products.php" class="btn btn-outline btn-small">Browse</a></div>
+                            <div class="product-bottom"><span class="price">Explore</span><a href="User/Products.php" class="btn btn-outline btn-small">Browse</a></div>
                         </div>
                     </article>
                 <?php endif; ?>
@@ -1952,7 +1962,7 @@ $userName = $_SESSION['username'] ?? $_SESSION['name'] ?? 'Customer';
 
 
                     <a
-                        href="SignUp.php"
+                        href="User/SignUp.php"
                         class="btn btn-primary"
                     >
                         Join DunkHome Kicks →
@@ -2084,7 +2094,7 @@ $userName = $_SESSION['username'] ?? $_SESSION['name'] ?? 'Customer';
                     <div class="cta-buttons">
 
                         <a
-                            href="Dashboard.php"
+                            href="User/Dashboard.php"
                             class="btn btn-primary"
                         >
                             Open Dashboard →
@@ -2111,14 +2121,14 @@ $userName = $_SESSION['username'] ?? $_SESSION['name'] ?? 'Customer';
                     <div class="cta-buttons">
 
                         <a
-                            href="SignUp.php"
+                            href="User/SignUp.php"
                             class="btn btn-primary"
                         >
                             Create Account →
                         </a>
 
                         <a
-                            href="SignIn.php"
+                            href="User/SignIn.php"
                             class="btn btn-outline"
                         >
                             Sign In
@@ -2185,11 +2195,11 @@ $userName = $_SESSION['username'] ?? $_SESSION['name'] ?? 'Customer';
                     Categories
                 </a>
 
-                <a href="Products.php">
+                <a href="User/Products.php">
                     Featured
                 </a>
 
-                <a href="Home.php#about">
+                <a href="User/Home.php#about">
                     About
                 </a>
 
@@ -2202,23 +2212,23 @@ $userName = $_SESSION['username'] ?? $_SESSION['name'] ?? 'Customer';
                     Account
                 </h4>
 
-                <a href="SignIn.php">
+                <a href="User/SignIn.php">
                     Sign In
                 </a>
 
-                <a href="SignUp.php">
+                <a href="User/SignUp.php">
                     Create Account
                 </a>
 
                 <?php if ($adminLoggedIn): ?>
 
-                    <a href="AdminDashboard.php">
+                    <a href="Admin/AdminDashboard.php">
                         Admin Dashboard
                     </a>
 
                 <?php else: ?>
 
-                    <a href="AdminSignIn.php">
+                    <a href="Admin/AdminSignIn.php">
                         Admin Login
                     </a>
 
@@ -2233,15 +2243,15 @@ $userName = $_SESSION['username'] ?? $_SESSION['name'] ?? 'Customer';
                     Connect
                 </h4>
 
-                <a href="Home.php#about">
+                <a href="User/Home.php#about">
                     Our Story
                 </a>
 
-                <a href="Products.php">
+                <a href="User/Products.php">
                     Collections
                 </a>
 
-                <a href="SignUp.php">
+                <a href="User/SignUp.php">
                     Join Us
                 </a>
 

@@ -1,15 +1,16 @@
 <?php
 declare(strict_types=1);
 
-require_once __DIR__ . '/db.php';
-require_once __DIR__ . '/Mailer.php';
+require_once __DIR__ . '/../db.php';
+require_once __DIR__ . '/../Mailer.php';
+require_once __DIR__ . '/../session.php';
 
 if (session_status() !== PHP_SESSION_ACTIVE) {
     session_start();
 }
 
 if (isset($_SESSION['user_id'])) {
-    header('Location: index.php');
+    header('Location: ' . appUrl('index.php'));
     exit;
 }
 
@@ -40,6 +41,11 @@ function emailExists(mysqli $conn, string $email): bool
 // AJAX: send OTP
 if (($_POST['action'] ?? '') === 'send_otp') {
     header('Content-Type: application/json; charset=utf-8');
+
+    if (!verifyCsrf($_POST['csrf_token'] ?? null)) {
+        echo json_encode(['status' => 'error', 'message' => 'Refresh the page and try again.']);
+        exit;
+    }
 
     $email = normalizeEmail($_POST['email'] ?? '');
 
@@ -84,6 +90,11 @@ if (($_POST['action'] ?? '') === 'send_otp') {
 if (($_POST['action'] ?? '') === 'verify_otp') {
     header('Content-Type: application/json; charset=utf-8');
 
+    if (!verifyCsrf($_POST['csrf_token'] ?? null)) {
+        echo json_encode(['status' => 'error', 'message' => 'Refresh the page and try again.']);
+        exit;
+    }
+
     $email = normalizeEmail($_POST['email'] ?? '');
     $enteredOtp = trim((string) ($_POST['otp'] ?? ''));
 
@@ -120,7 +131,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'regis
 
     $strongPassword = '/^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/';
 
-    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    if (!verifyCsrf($_POST['csrf_token'] ?? null)) {
+        $message = 'Your registration form expired. Refresh the page and try again.';
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $message = 'Invalid email address.';
     } elseif (emailExists($conn, $email)) {
         $message = 'This email is already registered. Please sign in instead.';
@@ -154,7 +167,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'regis
                 );
 
                 $_SESSION['signup_success'] = 'Account created successfully! Please sign in.';
-                header('Location: SignIn.php');
+                header('Location: ' . appUrl('User/SignIn.php'));
                 exit;
             }
 
@@ -166,7 +179,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'regis
 ?>
 <!DOCTYPE html>
 <html lang="en">
-<head>
+<head><base href="<?= h(appBaseUrl()) ?>">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#07100d">
@@ -1097,9 +1110,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'regis
                         </div>
                     <?php endif; ?>
 
-                    <form id="signupForm" action="SignUp.php" method="POST" novalidate>
+                    <form id="signupForm" action="User/SignUp.php" method="POST" novalidate>
                         <input type="hidden" name="action" value="register">
                         <input type="hidden" name="email" id="verifiedEmail">
+                        <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
 
                         <!-- Step 1 -->
                         <div id="step1" class="step">
@@ -1271,7 +1285,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'regis
                     <!-- Sign-in moved to the bottom of the form/card -->
                     <div class="card-footer">
                         <p>Already have an account?</p>
-                        <a class="signin-link" href="SignIn.php">
+                        <a class="signin-link" href="User/SignIn.php">
                             Sign in securely
                             <i class="fa-solid fa-arrow-right"></i>
                         </a>
@@ -1373,12 +1387,13 @@ document.addEventListener('DOMContentLoaded', () => {
     async function postAction(action, payload) {
         const body = new FormData();
         body.append('action', action);
+        body.append('csrf_token', document.querySelector('#signupForm [name="csrf_token"]').value);
 
         Object.entries(payload).forEach(([key, value]) => {
             body.append(key, value);
         });
 
-        const response = await fetch('SignUp.php', {
+        const response = await fetch('User/SignUp.php', {
             method: 'POST',
             body,
             headers: { 'X-Requested-With': 'XMLHttpRequest' }

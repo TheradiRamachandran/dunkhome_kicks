@@ -1,7 +1,8 @@
 <?php
 declare(strict_types=1);
 
-require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/../db.php';
+require_once __DIR__ . '/../session.php';
 
 if (session_status() !== PHP_SESSION_ACTIVE) {
     session_start();
@@ -13,7 +14,7 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
 |--------------------------------------------------------------------------
 */
 if (isset($_SESSION['user_id'])) {
-    header('Location: index.php');
+    header('Location: ' . appUrl('index.php'));
     exit;
 }
 
@@ -39,7 +40,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'login
     $email = normalizeEmail($_POST['email'] ?? '');
     $password = (string) ($_POST['password'] ?? '');
 
-    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    if (!verifyCsrf($_POST['csrf_token'] ?? null)) {
+        $message = 'Your sign-in form expired. Refresh the page and try again.';
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $message = 'Please enter a valid email address.';
     } elseif ($password === '') {
         $message = 'Please enter your password.';
@@ -64,6 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'login
                  * Prevent session fixation after successful authentication.
                  */
                 session_regenerate_id(true);
+                unset($_SESSION['csrf']);
 
                 $_SESSION['user_id'] = (int) $user['id'];
                 $_SESSION['user_email'] = (string) $user['email'];
@@ -73,7 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'login
                  */
                 $_SESSION['email'] = (string) $user['email'];
 
-                header('Location: index.php');
+                header('Location: ' . appUrl('index.php'));
                 exit;
             }
         }
@@ -93,7 +97,7 @@ if ($message === '' && !empty($_SESSION['signup_success'])) {
 ?>
 <!DOCTYPE html>
 <html lang="en">
-<head>
+<head><base href="<?= h(appBaseUrl()) ?>">
     <meta charset="UTF-8">
     <meta
         name="viewport"
@@ -1107,11 +1111,12 @@ if ($message === '' && !empty($_SESSION['signup_success'])) {
 
                     <form
                         id="signinForm"
-                        action="SignIn.php"
+                        action="User/SignIn.php"
                         method="POST"
                         novalidate
                     >
                         <input type="hidden" name="action" value="login">
+                        <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
 
                         <div class="field">
                             <label class="field-label" for="emailField">
@@ -1188,7 +1193,7 @@ if ($message === '' && !empty($_SESSION['signup_success'])) {
                                 <span>Remember me</span>
                             </label>
 
-                            <a class="forgot" href="ForgotPassword.php">
+                            <a class="forgot" href="User/ForgotPassword.php">
                                 Forgot password?
                             </a>
                         </div>
@@ -1232,7 +1237,7 @@ if ($message === '' && !empty($_SESSION['signup_success'])) {
 
                         <a
                             class="signup-link"
-                            href="SignUp.php"
+                            href="User/SignUp.php"
                         >
                             Create an account
                             <i class="fa-solid fa-arrow-right"></i>

@@ -2,6 +2,9 @@ DunkHome Kicks - Enhanced Project
 
 UI PRESERVED
 - Existing supplied storefront/auth/admin UI was kept as the base.
+- Administration pages are organized in Admin/; customer pages are organized in User/.
+- Use the Admin/ and User/ paths for page URLs; page implementations live in those folders.
+- Shared configuration, sessions, assets, images and order helpers remain shared at the project root.
 - Existing green/black visual language is retained.
 - Theme toggle is available at the top of pages and persists through localStorage.
 - Page transitions are handled by assets/dunkhome-ui.js.
@@ -30,6 +33,11 @@ PRODUCT STORAGE
 MAIL / OTP
 - Mailer.php uses PHP mail(). Configure your server SMTP/mail transport for production.
 - OTP expiry is 10 minutes.
+
+ADMIN BOOTSTRAP
+- The first admin account can be created from localhost when no admins exist.
+- Remote first-admin setup is blocked; create the initial account locally before deployment.
+- Admin registration also requires email OTP verification.
 
 DATABASE
 - Existing database name: dunkhome_kicks.

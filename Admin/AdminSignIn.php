@@ -1,7 +1,8 @@
 <?php
 declare(strict_types=1);
 
-require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/../db.php';
+require_once __DIR__ . '/../session.php';
 
 if (session_status() !== PHP_SESSION_ACTIVE) {
     session_start();
@@ -24,7 +25,7 @@ $conn->query("
 ");
 
 if (isset($_SESSION['admin_id'])) {
-    header('Location: AdminDashboard.php');
+    header('Location: ' . appUrl('Admin/AdminDashboard.php'));
     exit;
 }
 
@@ -43,7 +44,9 @@ if (
     $email = strtolower(trim((string) ($_POST['email'] ?? '')));
     $password = (string) ($_POST['password'] ?? '');
 
-    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    if (!verifyCsrf($_POST['csrf_token'] ?? null)) {
+        $message = 'Your sign-in form expired. Refresh the page and try again.';
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $message = 'Please enter a valid administrator email address.';
     } elseif ($password === '') {
         $message = 'Please enter your administrator password.';
@@ -77,11 +80,12 @@ if (
                     'The administrator email or password is incorrect.';
             } else {
                 session_regenerate_id(true);
+                unset($_SESSION['csrf']);
 
                 $_SESSION['admin_id'] = (int) $admin['id'];
                 $_SESSION['admin_email'] = (string) $admin['email'];
 
-                header('Location: AdminDashboard.php');
+                header('Location: ' . appUrl('Admin/AdminDashboard.php'));
                 exit;
             }
         }
@@ -99,7 +103,7 @@ if (
 ?>
 <!DOCTYPE html>
 <html lang="en">
-<head>
+<head><base href="<?= h(appBaseUrl()) ?>">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -337,42 +341,6 @@ if (
             color:rgba(248,250,248,.70);
             font-size:13px;
             line-height:1.75;
-        }
-
-        .visual-bottom {
-            position:relative;
-            z-index:2;
-            display:flex;
-            gap:10px;
-            flex-wrap:wrap;
-            animation:fadeUp .8s .32s ease both;
-        }
-
-        .mini-card {
-            min-width:150px;
-            padding:13px 14px;
-            border:1px solid rgba(255,255,255,.13);
-            border-radius:15px;
-            background:rgba(0,0,0,.22);
-            backdrop-filter:blur(14px);
-            transition:.25s ease;
-        }
-
-        .mini-card:hover {
-            transform:translateY(-3px);
-            border-color:rgba(121,230,170,.26);
-        }
-
-        .mini-card strong {
-            display:block;
-            font-size:12px;
-        }
-
-        .mini-card span {
-            display:block;
-            margin-top:4px;
-            color:rgba(255,255,255,.48);
-            font-size:9px;
         }
 
         .form-side {
@@ -737,8 +705,6 @@ if (
                 padding:30px;
             }
 
-            .visual-bottom { display:none; }
-
             .visual-copy h1 {
                 font-size:clamp(45px,9vw,68px);
             }
@@ -829,6 +795,42 @@ if (
                 scroll-behavior:auto !important;
             }
         }
+
+        body.light {
+            --white:#18251d;
+            --muted:#5f7066;
+            --line:rgba(20,48,31,.14);
+            --line-strong:rgba(20,48,31,.22);
+            --shadow:0 28px 70px rgba(28,55,38,.14);
+            color:#18251d;
+            background:
+                radial-gradient(circle at 8% 7%,rgba(73,204,134,.16),transparent 27%),
+                radial-gradient(circle at 92% 82%,rgba(255,154,98,.10),transparent 23%),
+                linear-gradient(135deg,#f2f8f3,#e8f2eb 50%,#f7faf7);
+        }
+
+        body.light::before { opacity:.08; }
+        body.light .auth-shell { border-color:rgba(20,48,31,.13); background:rgba(255,255,255,.56); }
+        body.light .form-side { background:radial-gradient(circle at 100% 0%,rgba(73,204,134,.10),transparent 34%),linear-gradient(145deg,rgba(255,255,255,.98),rgba(242,248,243,.99)); }
+        body.light .title { color:#18251d; }
+        body.light .subtitle,
+        body.light .field-label { color:#43544a; }
+        body.light .field-label small { color:#74847a; }
+        body.light .input { color:#18251d; background:rgba(255,255,255,.88); border-color:rgba(20,48,31,.16); }
+        body.light .input::placeholder { color:#87958c; }
+        body.light .input:hover { border-color:rgba(20,48,31,.28); }
+        body.light .input:focus { background:#fff; }
+        body.light .remember { color:#586960; }
+        body.light .remember input { border-color:rgba(20,48,31,.2); background:rgba(255,255,255,.8); }
+        body.light .remember input:checked { box-shadow:inset 0 0 0 4px #e1f4e8; }
+        body.light .trust { border-color:rgba(20,48,31,.1); background:rgba(255,255,255,.55); }
+        body.light .trust span,
+        body.light .card-footer p,
+        body.light footer { color:#66766c; }
+        body.light .card-footer { border-color:rgba(20,48,31,.12); }
+        body.light .secure-note { color:#65756b; }
+        body.light .signup-link { color:#166b43; }
+        body.light .forgot { color:#276c48; }
     </style>
     <link rel="stylesheet" href="assets/dunkhome-ui.css">
 </head>
@@ -871,17 +873,6 @@ if (
                     </p>
                 </div>
 
-                <div class="visual-bottom">
-                    <div class="mini-card">
-                        <strong>Private access</strong>
-                        <span>Administrator credentials only</span>
-                    </div>
-
-                    <div class="mini-card">
-                        <strong>Secure session</strong>
-                        <span>Protected authentication flow</span>
-                    </div>
-                </div>
             </aside>
 
             <section class="form-side">
@@ -908,8 +899,9 @@ if (
                         </div>
                     <?php endif; ?>
 
-                    <form id="adminSigninForm" action="AdminSignIn.php" method="POST" novalidate>
+                    <form id="adminSigninForm" action="Admin/AdminSignIn.php" method="POST" novalidate>
                         <input type="hidden" name="action" value="admin_login">
+                        <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
 
                         <div class="field">
                             <label class="field-label" for="emailField">
@@ -978,7 +970,7 @@ if (
                                 <span>Remember this device</span>
                             </label>
 
-                            <a class="forgot" href="AdminForgotPassword.php">
+                            <a class="forgot" href="Admin/AdminForgotPassword.php">
                                 Forgot password?
                             </a>
                         </div>
@@ -1011,7 +1003,7 @@ if (
                     <div class="card-footer">
                         <p>Need to create an administrator account?</p>
 
-                        <a class="signup-link" href="AdminSignUp.php">
+                        <a class="signup-link" href="Admin/AdminSignUp.php">
                             Admin sign up
                             <i class="fa-solid fa-arrow-right"></i>
                         </a>
