@@ -20,7 +20,7 @@ function adminLoggedIn(): bool { return isset($_SESSION['admin_id']); }
 function appBaseUrl(): string {
     $scriptName = str_replace('\\', '/', (string) ($_SERVER['SCRIPT_NAME'] ?? '/'));
     $directory = rtrim(dirname($scriptName), '/');
-    if (preg_match('~/(Admin|User)$~i', $directory)) {
+    while (preg_match('~/(Admin|User)$~i', $directory)) {
         $directory = rtrim(dirname($directory), '/');
     }
     return ($directory === '' ? '/' : $directory . '/');

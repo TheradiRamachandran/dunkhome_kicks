@@ -6,13 +6,14 @@ function sendOtpEmail(string $recipient, int $otp, string $purpose = 'verificati
   $from = getenv('DUNKHOME_MAIL_FROM') ?: 'no-reply@dunkhome-kicks.local';
   $from = preg_replace('/[\r\n]+/', '', $from);
   $isReset = $purpose === 'reset';
+  $isPasswordChange = $purpose === 'change_password';
   $subject = $isReset
     ? 'DunkHome Kicks password reset code'
-    : 'Your DunkHome Kicks verification code';
-  $heading = $isReset ? 'Reset your password' : 'Verify your email';
+    : ($isPasswordChange ? 'DunkHome Kicks password change verification code' : 'Your DunkHome Kicks verification code');
+  $heading = $isReset ? 'Reset your password' : ($isPasswordChange ? 'Confirm your password change' : 'Verify your email');
   $intro = $isReset
     ? 'Use this one-time code to reset your DunkHome Kicks password.'
-    : 'Use this one-time code to complete your DunkHome Kicks account verification.';
+    : ($isPasswordChange ? 'Use this one-time code to verify your request to change your DunkHome Kicks admin password.' : 'Use this one-time code to complete your DunkHome Kicks account verification.');
   $plainMessage = "Hello,\n\n{$intro}\n\nYour verification code is: {$otp}\n\nThis code expires in 10 minutes. If you did not request it, you can ignore this email.\n\nDunkHome Kicks";
   $htmlMessage = '<!doctype html><html lang="en"><body style="margin:0;padding:0;background:#07100d;color:#f4f8f5;font-family:Arial,Helvetica,sans-serif">'
     . '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#07100d;padding:36px 14px"><tr><td align="center">'

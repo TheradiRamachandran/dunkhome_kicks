@@ -49,7 +49,7 @@ $userName = $_SESSION['username'] ?? $_SESSION['name'] ?? 'Customer';
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
     <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap"
         rel="stylesheet"
     >
 
@@ -61,18 +61,19 @@ $userName = $_SESSION['username'] ?? $_SESSION['name'] ?? 'Customer';
 
         :root {
             --bg: #07100b;
-            --bg-secondary: #0b1510;
-            --card: rgba(17, 28, 21, 0.72);
-            --card-solid: #101b14;
+            --bg-secondary: #0b1713;
+            --card: rgba(14, 29, 24, 0.88);
+            --card-solid: #0e1d18;
 
-            --text: #f4f8f5;
-            --muted: #9aa99f;
+            --text: #f8faf8;
+            --muted: #9baba3;
 
-            --green: #22c55e;
-            --green-dark: #15803d;
-            --green-soft: #86efac;
+            --green: #79e6aa;
+            --green-dark: #347b55;
+            --green-soft: #b9f0ce;
+            --green-secondary: #55d892;
 
-            --border: rgba(134, 239, 172, 0.13);
+            --border: rgba(255, 255, 255, 0.10);
 
             --white: #ffffff;
             --black: #000000;
@@ -119,18 +120,18 @@ $userName = $_SESSION['username'] ?? $_SESSION['name'] ?? 'Customer';
         body {
             min-height: 100vh;
 
-            font-family: "Inter", sans-serif;
+            font-family: "DM Sans", sans-serif;
 
             color: var(--text);
             background:
                 radial-gradient(
                     circle at 15% 10%,
-                    rgba(34, 197, 94, 0.11),
+                    rgba(121, 230, 170, 0.11),
                     transparent 30%
                 ),
                 radial-gradient(
                     circle at 85% 25%,
-                    rgba(34, 197, 94, 0.07),
+                    rgba(255, 154, 98, 0.055),
                     transparent 30%
                 ),
                 var(--bg);
@@ -243,7 +244,7 @@ $userName = $_SESSION['username'] ?? $_SESSION['name'] ?? 'Customer';
             align-items: center;
             gap: 11px;
 
-            font-family: "Space Grotesk", sans-serif;
+            font-family: "DM Sans", sans-serif;
             font-size: 21px;
             font-weight: 700;
 
@@ -261,7 +262,7 @@ $userName = $_SESSION['username'] ?? $_SESSION['name'] ?? 'Customer';
             border: 1px solid var(--border);
 
             box-shadow:
-                0 8px 25px rgba(34, 197, 94, 0.15);
+                0 8px 25px rgba(0, 0, 0, 0.24);
         }
 
         .logo span {
@@ -348,7 +349,7 @@ $userName = $_SESSION['username'] ?? $_SESSION['name'] ?? 'Customer';
 
         .theme-btn:hover,
         .menu-btn:hover {
-            border-color: rgba(34, 197, 94, 0.4);
+            border-color: rgba(121, 230, 170, 0.4);
             transform: translateY(-2px);
         }
 
@@ -397,17 +398,17 @@ $userName = $_SESSION['username'] ?? $_SESSION['name'] ?? 'Customer';
 
             background: linear-gradient(
                 135deg,
-                #4ade80,
-                #22c55e
+                #90efbb,
+                #56d993
             );
 
             box-shadow:
-                0 12px 35px rgba(34, 197, 94, 0.22);
+                0 12px 28px rgba(121, 230, 170, 0.16);
         }
 
         .btn-primary:hover {
             box-shadow:
-                0 17px 45px rgba(34, 197, 94, 0.35);
+                0 17px 38px rgba(121, 230, 170, 0.24);
         }
 
         .btn-outline {
@@ -419,8 +420,8 @@ $userName = $_SESSION['username'] ?? $_SESSION['name'] ?? 'Customer';
         }
 
         .btn-outline:hover {
-            border-color: rgba(34, 197, 94, 0.4);
-            background: rgba(34, 197, 94, 0.07);
+            border-color: rgba(121, 230, 170, 0.4);
+            background: rgba(121, 230, 170, 0.07);
         }
 
         .btn-small {
@@ -440,6 +441,8 @@ $userName = $_SESSION['username'] ?? $_SESSION['name'] ?? 'Customer';
             display: flex;
             align-items: center;
 
+            overflow: clip;
+
             padding:
                 145px 0
                 90px;
@@ -458,7 +461,7 @@ $userName = $_SESSION['username'] ?? $_SESSION['name'] ?? 'Customer';
             right: -170px;
             top: 100px;
 
-            background: rgba(34, 197, 94, 0.08);
+            background: rgba(121, 230, 170, 0.08);
 
             filter: blur(90px);
 
@@ -508,7 +511,7 @@ $userName = $_SESSION['username'] ?? $_SESSION['name'] ?? 'Customer';
 
             border: 1px solid var(--border);
 
-            background: rgba(34, 197, 94, 0.06);
+            background: rgba(121, 230, 170, 0.06);
 
             color: var(--green-soft);
 
@@ -535,19 +538,15 @@ $userName = $_SESSION['username'] ?? $_SESSION['name'] ?? 'Customer';
         }
 
         .hero h1 {
-            max-width: 720px;
+            max-width: 620px;
 
-            font-family: "Space Grotesk", sans-serif;
+            font-family: "Playfair Display", serif;
 
-            font-size: clamp(
-                48px,
-                7vw,
-                84px
-            );
+            font-size: 72px;
 
-            line-height: 0.98;
+            line-height: 1.02;
 
-            letter-spacing: -4px;
+            letter-spacing: 0;
 
             margin-bottom: 25px;
         }
@@ -590,20 +589,10 @@ $userName = $_SESSION['username'] ?? $_SESSION['name'] ?? 'Customer';
         }
 
         .shoe-stage {
-            width: min(100%, 500px);
+            width: min(100%, 520px);
             aspect-ratio: 1;
 
             position: relative;
-
-            border-radius: 50%;
-
-            background:
-                radial-gradient(
-                    circle,
-                    rgba(34,197,94,0.16),
-                    rgba(34,197,94,0.03) 45%,
-                    transparent 68%
-                );
 
             display: grid;
             place-items: center;
@@ -623,108 +612,13 @@ $userName = $_SESSION['username'] ?? $_SESSION['name'] ?? 'Customer';
             }
         }
 
-        .shoe-card {
-            width: 76%;
+        .hero-shoe-art {
+            display: block;
+            width: 100%;
             aspect-ratio: 1;
-
-            border-radius: 34px;
-
-            border: 1px solid var(--border);
-
-            background:
-                linear-gradient(
-                    145deg,
-                    rgba(255,255,255,0.09),
-                    rgba(255,255,255,0.015)
-                );
-
-            backdrop-filter: blur(20px);
-
-            box-shadow:
-                var(--shadow);
-
-            display: flex;
-            flex-direction: column;
-
-            align-items: center;
-            justify-content: center;
-
-            transform: rotate(-7deg);
-
-            overflow: hidden;
-
-            position: relative;
-        }
-
-        .shoe-card::before {
-            content: "";
-
-            position: absolute;
-
-            width: 230px;
-            height: 230px;
-
-            border-radius: 50%;
-
-            background: rgba(34,197,94,0.12);
-
-            filter: blur(45px);
-        }
-
-        .shoe-symbol {
-            position: relative;
-
-            font-size: 115px;
-
-            filter:
-                drop-shadow(
-                    0 25px 25px
-                    rgba(0,0,0,0.35)
-                );
-
-            transform: rotate(7deg);
-        }
-
-        .shoe-name {
-            position: relative;
-
-            margin-top: 18px;
-
-            font-family: "Space Grotesk", sans-serif;
-
-            font-size: 20px;
-
-            letter-spacing: 1px;
-        }
-
-        .floating-tag {
-            position: absolute;
-
-            padding: 11px 15px;
-
+            object-fit: cover;
             border-radius: 14px;
-
-            background: var(--card);
-
-            border: 1px solid var(--border);
-
-            backdrop-filter: blur(18px);
-
-            box-shadow: var(--shadow);
-
-            font-size: 12px;
-
-            font-weight: 700;
-        }
-
-        .tag-one {
-            top: 80px;
-            left: 0;
-        }
-
-        .tag-two {
-            right: 0;
-            bottom: 90px;
+            box-shadow: 0 24px 64px rgba(0,0,0,.24);
         }
 
 
@@ -747,7 +641,7 @@ $userName = $_SESSION['username'] ?? $_SESSION['name'] ?? 'Customer';
         }
 
         .section-heading h2 {
-            font-family: "Space Grotesk", sans-serif;
+            font-family: "Playfair Display", serif;
 
             font-size: clamp(32px, 5vw, 48px);
 
@@ -801,10 +695,10 @@ $userName = $_SESSION['username'] ?? $_SESSION['name'] ?? 'Customer';
             transform: translateY(-8px);
 
             border-color:
-                rgba(34, 197, 94, 0.35);
+                rgba(121, 230, 170, 0.35);
 
             background:
-                rgba(34, 197, 94, 0.06);
+                rgba(121, 230, 170, 0.06);
         }
 
         .category-icon {
@@ -817,7 +711,7 @@ $userName = $_SESSION['username'] ?? $_SESSION['name'] ?? 'Customer';
             border-radius: 16px;
 
             background:
-                rgba(34,197,94,0.09);
+                rgba(121,230,170,0.09);
 
             font-size: 27px;
 
@@ -825,7 +719,7 @@ $userName = $_SESSION['username'] ?? $_SESSION['name'] ?? 'Customer';
         }
 
         .category-card h3 {
-            font-family: "Space Grotesk", sans-serif;
+            font-family: "Playfair Display", serif;
 
             font-size: 22px;
 
@@ -883,7 +777,7 @@ $userName = $_SESSION['username'] ?? $_SESSION['name'] ?? 'Customer';
             transform: translateY(-7px);
 
             border-color:
-                rgba(34, 197, 94, 0.32);
+                rgba(121, 230, 170, 0.32);
         }
 
         .product-image {
@@ -895,7 +789,7 @@ $userName = $_SESSION['username'] ?? $_SESSION['name'] ?? 'Customer';
             background:
                 radial-gradient(
                     circle at center,
-                    rgba(34,197,94,0.13),
+                    rgba(121,230,170,0.13),
                     transparent 65%
                 );
 
@@ -934,7 +828,7 @@ $userName = $_SESSION['username'] ?? $_SESSION['name'] ?? 'Customer';
         }
 
         .product-content h3 {
-            font-family: "Space Grotesk", sans-serif;
+            font-family: "Playfair Display", serif;
 
             font-size: 21px;
 
@@ -986,7 +880,7 @@ $userName = $_SESSION['username'] ?? $_SESSION['name'] ?? 'Customer';
             background:
                 linear-gradient(
                     135deg,
-                    rgba(34,197,94,0.14),
+                    rgba(121,230,170,0.14),
                     rgba(255,255,255,0.025)
                 );
         }
@@ -999,13 +893,13 @@ $userName = $_SESSION['username'] ?? $_SESSION['name'] ?? 'Customer';
             width: 320px;
             height: 320px;
 
-            right: -100px;
+            right: 0;
             top: -100px;
 
             border-radius: 50%;
 
             background:
-                rgba(34,197,94,0.12);
+                rgba(121,230,170,0.12);
 
             filter: blur(50px);
         }
@@ -1019,7 +913,7 @@ $userName = $_SESSION['username'] ?? $_SESSION['name'] ?? 'Customer';
         }
 
         .promo h2 {
-            font-family: "Space Grotesk", sans-serif;
+            font-family: "Playfair Display", serif;
 
             font-size: clamp(32px, 5vw, 52px);
 
@@ -1062,7 +956,7 @@ $userName = $_SESSION['username'] ?? $_SESSION['name'] ?? 'Customer';
             background:
                 linear-gradient(
                     145deg,
-                    rgba(34,197,94,0.10),
+                    rgba(121,230,170,0.10),
                     rgba(255,255,255,0.02)
                 );
 
@@ -1093,11 +987,11 @@ $userName = $_SESSION['username'] ?? $_SESSION['name'] ?? 'Customer';
 
             box-shadow:
                 0 0 80px
-                rgba(34,197,94,0.12);
+                rgba(121,230,170,0.12);
         }
 
         .about-content h2 {
-            font-family: "Space Grotesk", sans-serif;
+            font-family: "Playfair Display", serif;
 
             font-size: clamp(34px, 5vw, 50px);
 
@@ -1146,7 +1040,7 @@ $userName = $_SESSION['username'] ?? $_SESSION['name'] ?? 'Customer';
             color: var(--green);
 
             background:
-                rgba(34,197,94,0.10);
+                rgba(121,230,170,0.10);
         }
 
 
@@ -1168,13 +1062,13 @@ $userName = $_SESSION['username'] ?? $_SESSION['name'] ?? 'Customer';
             background:
                 radial-gradient(
                     circle at center,
-                    rgba(34,197,94,0.11),
+                    rgba(121,230,170,0.11),
                     transparent 60%
                 );
         }
 
         .cta h2 {
-            font-family: "Space Grotesk", sans-serif;
+            font-family: "Playfair Display", serif;
 
             font-size: clamp(36px, 6vw, 60px);
 
@@ -1439,9 +1333,8 @@ $userName = $_SESSION['username'] ?? $_SESSION['name'] ?? 'Customer';
             }
 
             .hero h1 {
-                font-size: 48px;
-
-                letter-spacing: -2.5px;
+                font-size: 40px;
+                letter-spacing: 0;
             }
 
             .hero-description {
@@ -1459,33 +1352,11 @@ $userName = $_SESSION['username'] ?? $_SESSION['name'] ?? 'Customer';
             }
 
             .hero-visual {
-                min-height: 330px;
+                min-height: 0;
             }
 
             .shoe-stage {
                 width: 100%;
-            }
-
-            .shoe-card {
-                width: 72%;
-            }
-
-            .shoe-symbol {
-                font-size: 75px;
-            }
-
-            .floating-tag {
-                padding: 8px 11px;
-
-                font-size: 10px;
-            }
-
-            .tag-one {
-                top: 35px;
-            }
-
-            .tag-two {
-                bottom: 45px;
             }
 
             section {
@@ -1550,7 +1421,7 @@ $userName = $_SESSION['username'] ?? $_SESSION['name'] ?? 'Customer';
         }
 
     </style>
-    <link rel="stylesheet" href="assets/dunkhome-ui.css">
+    <link rel="stylesheet" href="assets/dunkhome-ui.css?v=20261001-loader4">
 </head>
 
 <body>
@@ -1725,29 +1596,7 @@ $userName = $_SESSION['username'] ?? $_SESSION['name'] ?? 'Customer';
             <div class="hero-visual">
 
                 <div class="shoe-stage">
-
-                    <div class="floating-tag tag-one">
-                        PREMIUM QUALITY
-                    </div>
-
-
-                    <div class="shoe-card">
-
-                        <div class="shoe-symbol">
-                            👟
-                        </div>
-
-                        <div class="shoe-name">
-                            DUNKHOME
-                        </div>
-
-                    </div>
-
-
-                    <div class="floating-tag tag-two">
-                        STREET • STYLE • CULTURE
-                    </div>
-
+                    <img class="hero-shoe-art" src="image/background.jpg" alt="DunkHome Kicks sneaker collection">
                 </div>
 
             </div>
@@ -2528,6 +2377,6 @@ $userName = $_SESSION['username'] ?? $_SESSION['name'] ?? 'Customer';
 
 </script>
 
-    <script src="assets/dunkhome-ui.js" defer></script>
+    <script src="assets/dunkhome-ui.js?v=20261001-loader4" defer></script>
 </body>
 </html>

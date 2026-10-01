@@ -2169,7 +2169,7 @@ body.light .live-status { color:#62746a; }
 }
 
 </style>
-    <link rel="stylesheet" href="assets/dunkhome-ui.css">
+    <link rel="stylesheet" href="assets/dunkhome-ui.css?v=20261001-loader4">
     <link rel="stylesheet" href="assets/admin-navigation.css">
 </head>
 
@@ -2722,6 +2722,6 @@ document
 
 </script>
 
-    <script src="assets/dunkhome-ui.js" defer></script>
+    <script src="assets/dunkhome-ui.js?v=20261001-loader4" defer></script>
 </body>
 </html>

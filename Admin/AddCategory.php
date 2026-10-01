@@ -73,7 +73,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    <link rel="stylesheet" href="assets/dunkhome-ui.css">
+    <link rel="stylesheet" href="assets/dunkhome-ui.css?v=20261001-loader4">
     <link rel="stylesheet" href="assets/admin-pages.css">
     <link rel="stylesheet" href="assets/admin-navigation.css">
     <style>
@@ -169,7 +169,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="category-form-footer">
                     <span class="category-field-help">You can edit visibility from Manage Categories.</span>
                     <div class="category-actions">
-                        <a class="admin-button" href="Admin/ManageCategories.php">Manage categories</a>
+                        <a class="admin-button" href="ManageCategories.php">Manage categories</a>
                         <button class="admin-button primary category-submit" type="submit"><i class="fa-solid fa-plus"></i> Save category</button>
                     </div>
                 </div>
@@ -178,8 +178,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </main>
     <footer class="admin-footer">DunkHome Kicks administration</footer>
 </div>
-<script src="assets/dunkhome-ui.js" defer></script>
-<script src="assets/admin-sidebar-drawer.js" defer></script>
+<script src="assets/dunkhome-ui.js?v=20261001-loader4" defer></script>
+<script src="assets/admin-sidebar-drawer.js?v=20261001-1" defer></script>
 <script>
 document.getElementById('categoryRefreshButton')?.addEventListener('click', () => window.location.reload());
 

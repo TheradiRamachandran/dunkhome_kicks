@@ -1021,7 +1021,7 @@ if ($message === '' && !empty($_SESSION['signup_success'])) {
             }
         }
     </style>
-    <link rel="stylesheet" href="assets/dunkhome-ui.css">
+    <link rel="stylesheet" href="assets/dunkhome-ui.css?v=20261001-loader4">
 </head>
 
 <body>
@@ -1406,6 +1406,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 </script>
-    <script src="assets/dunkhome-ui.js" defer></script>
+    <script src="assets/dunkhome-ui.js?v=20261001-loader4" defer></script>
 </body>
 </html>

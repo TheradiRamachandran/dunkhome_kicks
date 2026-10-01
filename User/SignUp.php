@@ -1045,7 +1045,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'regis
             }
         }
     </style>
-    <link rel="stylesheet" href="assets/dunkhome-ui.css">
+    <link rel="stylesheet" href="assets/dunkhome-ui.css?v=20261001-loader4">
 </head>
 <body>
 <div class="page">
@@ -1703,6 +1703,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 </script>
-    <script src="assets/dunkhome-ui.js" defer></script>
+    <script src="assets/dunkhome-ui.js?v=20261001-loader4" defer></script>
 </body>
 </html>

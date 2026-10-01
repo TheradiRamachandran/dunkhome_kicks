@@ -9,11 +9,13 @@ $adminNavigationItems = [
     ['Admin/AdminOrders.php', 'Manage orders'],
     ['Admin/AdminReviews.php', 'Reviews'],
     ['Admin/AdminContact.php', 'Contact'],
+    ['Admin/ChangePassword.php', 'Change password'],
     ['index.php', 'View website'],
 ];
 $adminCurrentPage = basename((string) parse_url((string) ($_SERVER['SCRIPT_NAME'] ?? ''), PHP_URL_PATH));
 foreach ($adminNavigationItems as [$path, $label]):
-    $active = $adminCurrentPage === basename($path);
+    $active = $adminCurrentPage === basename($path)
+        || ($adminCurrentPage === 'AdminOrderDetails.php' && basename($path) === 'AdminOrders.php');
 ?>
 <a class="nav-link admin-nav-link<?= $active ? ' active' : '' ?>" href="<?= h(appUrl($path)) ?>"<?= $active ? ' aria-current="page"' : '' ?>><?= h($label) ?></a>
 <?php endforeach; ?>

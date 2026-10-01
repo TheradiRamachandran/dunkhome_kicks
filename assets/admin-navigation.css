@@ -245,21 +245,33 @@ body.light .app .admin-mini { border-color:var(--admin-nav-line); background:rgb
 	flex: 1;
 	min-height: 0;
 	flex-direction: column;
+	flex-wrap: nowrap;
 	align-items: stretch;
 	justify-content: flex-start;
 	gap: 5px;
 	overflow-y: auto;
+	overscroll-behavior: contain;
+	scrollbar-width: thin;
+	scrollbar-color: rgba(121, 230, 170, .28) transparent;
 }
 
 .admin-sidebar-layout .admin-nav-links .admin-nav-link {
 	width: 100%;
+	flex: 0 0 auto;
+	align-self: stretch;
 	min-height: 40px;
 	padding: 11px 12px;
 	border-radius: 13px;
+	justify-content: flex-start;
 	white-space: normal;
+	text-align: left;
+	overflow-wrap: anywhere;
 }
 
-.admin-sidebar-layout .admin-nav-links > .admin-nav-link:last-child { margin-top: auto; }
+.admin-sidebar-layout .admin-nav-links .admin-nav-link:focus-visible { outline: 2px solid var(--admin-nav-green); outline-offset: 2px; }
+.admin-sidebar-layout .admin-nav-links::-webkit-scrollbar { width: 4px; }
+.admin-sidebar-layout .admin-nav-links::-webkit-scrollbar-thumb { border-radius: 4px; background: rgba(121, 230, 170, .28); }
+
 .admin-sidebar-layout .admin-theme-toggle { justify-content: flex-start; margin-top: 8px; box-shadow: none; cursor: pointer; }
 
 .admin-sidebar-layout .admin-sidebar-identity {
@@ -329,7 +341,7 @@ body.light .admin-sidebar-layout .admin-mobile-action { color: #304239; backgrou
 @media (max-width: 960px) {
 	.admin-sidebar-layout { display: block; min-height: 100vh; }
 	.admin-sidebar-layout .admin-topbar { position: fixed; left: 0; top: 0; bottom: 0; z-index: 1100; width: 275px; height: 100vh; min-height: 100vh; flex-direction: column; flex-wrap: nowrap; padding: 20px 15px; border: 0; border-right: 1px solid var(--admin-nav-line); transform: translateX(-105%); transition: transform .28s ease; overflow-y: auto; }
-	.admin-sidebar-layout .admin-nav-links { display: flex; flex: 1; min-height: 0; flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 5px; overflow-y: auto; }
+	.admin-sidebar-layout .admin-nav-links { display: flex; flex: 1; min-height: 0; flex-direction: column; flex-wrap: nowrap; align-items: stretch; justify-content: flex-start; gap: 5px; overflow-y: auto; }
 	.admin-sidebar-layout .admin-nav-links .admin-nav-link { width: 100%; min-height: 40px; padding: 11px 12px; }
 	.admin-sidebar-layout .admin-sidebar-identity { margin-top: 12px; }
 	.admin-sidebar-layout .admin-mobile-menu { position: fixed; top: 12px; left: 12px; z-index: 1200; width: 42px; height: 42px; display: grid; place-items: center; border: 1px solid var(--admin-nav-line); border-radius: 11px; color: var(--admin-nav-text); background: var(--admin-panel); box-shadow: 0 8px 24px rgba(0, 0, 0, .16); font: inherit; cursor: pointer; }
@@ -337,6 +349,7 @@ body.light .admin-sidebar-layout .admin-mobile-action { color: #304239; backgrou
 	.admin-sidebar-layout .admin-menu-overlay { position: fixed; inset: 0; z-index: 1050; display: block; background: rgba(0, 0, 0, .5); backdrop-filter: blur(3px); opacity: 0; visibility: hidden; transition: opacity .24s ease, visibility .24s ease; }
 	body.admin-sidebar-open .admin-sidebar-layout .admin-topbar { transform: translateX(0); }
 	body.admin-sidebar-open .admin-sidebar-layout .admin-menu-overlay { opacity: 1; visibility: visible; }
+	body.admin-sidebar-open .admin-sidebar-layout .admin-mobile-menu { display: none; }
 	.admin-sidebar-layout .admin-content { width: calc(100% - 30px); padding: 72px 0 30px; }
 	.admin-sidebar-layout .admin-footer { width: calc(100% - 30px); padding: 12px 0; }
 }
@@ -345,6 +358,12 @@ body.light .admin-sidebar-layout .admin-mobile-action { color: #304239; backgrou
 	.admin-sidebar-layout .admin-content,
 	.admin-sidebar-layout .admin-footer { width: calc(100% - 24px); }
 	.admin-sidebar-layout .admin-content { padding-top: 72px; }
+}
+
+@media (max-height: 680px) {
+	.admin-sidebar-layout .admin-topbar { overflow-y: auto; overscroll-behavior: contain; }
+	.admin-sidebar-layout .admin-nav-links { flex: 0 0 auto; min-height: auto; overflow: visible; }
+	.admin-sidebar-layout .admin-sidebar-identity { margin-top: 14px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -141,7 +141,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <html lang="en">
 <head><base href="<?= h(appBaseUrl()) ?>">
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#07100d">
-    <title>Booking Checkout | DunkHome Kicks</title><link rel="icon" type="image/jpeg" href="image/logo.jpeg"><link rel="stylesheet" href="assets/dunkhome-ui.css">
+    <title>Booking Checkout | DunkHome Kicks</title><link rel="icon" type="image/jpeg" href="image/logo.jpeg"><link rel="stylesheet" href="assets/dunkhome-ui.css?v=20261001-loader4">
     <style>:root{--bg:#07100b;--card:rgba(17,28,21,.78);--text:#f4f8f5;--muted:#9aa99f;--green:#22c55e;--border:rgba(134,239,172,.15)}body{margin:0;color:var(--text);font-family:"DM Sans",sans-serif;background:radial-gradient(circle at 15% 10%,rgba(34,197,94,.11),transparent 30%),var(--bg)}body.light{--bg:#f5f8f6;--card:#fff;--text:#102016;--muted:#607065;--border:rgba(16,32,22,.1)}a{color:inherit;text-decoration:none}.wrap{width:min(1050px,calc(100% - 36px));margin:auto}.top{min-height:78px;display:flex;justify-content:space-between;align-items:center}.brand{font-weight:800}.brand span{color:var(--green)}main{padding:42px 0 80px}h1{font-size:40px}.layout{display:grid;grid-template-columns:1.15fr .85fr;gap:18px}.panel{padding:22px;border:1px solid var(--border);border-radius:18px;background:var(--card)}.fields{display:grid;grid-template-columns:1fr 1fr;gap:14px}.field{display:grid;gap:7px}.field.full{grid-column:1/-1}.field label{font-size:13px;font-weight:700}.field input,.field textarea{width:100%;box-sizing:border-box;padding:12px;border:1px solid var(--border);border-radius:10px;background:transparent;color:var(--text);font:inherit}.field textarea{min-height:90px;resize:vertical}.muted{color:var(--muted);line-height:1.6}.item{display:flex;gap:12px;justify-content:space-between;padding:13px 0;border-bottom:1px solid var(--border)}.message{padding:12px;color:#ffb0b0;border:1px solid rgba(255,123,123,.25);border-radius:10px}.primary{width:100%;margin-top:18px;padding:14px;border:0;border-radius:10px;background:var(--green);color:#041008;font:inherit;font-weight:800;cursor:pointer}@media(max-width:760px){.layout{grid-template-columns:1fr}.fields{grid-template-columns:1fr}.field.full{grid-column:auto}}
     </style>
 </head>
@@ -165,4 +165,4 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="item"><strong>Total</strong><strong>₹<?= number_format((float) $cartData['total'], 2) ?></strong></div>
         <p class="muted">Prices are checked again when you confirm the booking.</p>
     </aside></div>
-</main></div><script src="assets/dunkhome-ui.js" defer></script></body></html>
+</main></div><script src="assets/dunkhome-ui.js?v=20261001-loader4" defer></script></body></html>

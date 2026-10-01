@@ -832,7 +832,7 @@ if (
         body.light .signup-link { color:#166b43; }
         body.light .forgot { color:#276c48; }
     </style>
-    <link rel="stylesheet" href="assets/dunkhome-ui.css">
+    <link rel="stylesheet" href="assets/dunkhome-ui.css?v=20261001-loader4">
 </head>
 
 <body>
@@ -970,7 +970,7 @@ if (
                                 <span>Remember this device</span>
                             </label>
 
-                            <a class="forgot" href="Admin/AdminForgotPassword.php">
+                            <a class="forgot" href="<?= h(appUrl('Admin/AdminForgotPassword.php')) ?>">
                                 Forgot password?
                             </a>
                         </div>
@@ -1163,6 +1163,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 </script>
-    <script src="assets/dunkhome-ui.js" defer></script>
+    <script src="assets/dunkhome-ui.js?v=20261001-loader4" defer></script>
 </body>
 </html>

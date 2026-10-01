@@ -4,15 +4,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const overlay = document.getElementById('adminMenuOverlay');
 
     if (!drawer || !toggle || !overlay) return;
+    const icon = toggle.querySelector('i');
+
+    const updateToggle = isOpen => {
+        toggle.setAttribute('aria-expanded', String(isOpen));
+        toggle.setAttribute('aria-label', isOpen ? 'Close administration menu' : 'Open administration menu');
+        toggle.style.display = isOpen ? 'none' : '';
+        if (icon) icon.className = 'fa-solid fa-bars';
+    };
 
     const closeDrawer = () => {
         document.body.classList.remove('admin-sidebar-open');
-        toggle.setAttribute('aria-expanded', 'false');
+        updateToggle(false);
     };
 
     toggle.addEventListener('click', () => {
         const isOpen = document.body.classList.toggle('admin-sidebar-open');
-        toggle.setAttribute('aria-expanded', String(isOpen));
+        updateToggle(isOpen);
     });
 
     overlay.addEventListener('click', closeDrawer);

@@ -14,9 +14,3 @@ CREATE TABLE IF NOT EXISTS categories (
     UNIQUE KEY uq_categories_slug (slug)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-INSERT IGNORE INTO categories (name, slug) VALUES
-    ('Sneakers', 'sneakers'),
-    ('Basketball', 'basketball'),
-    ('Streetwear', 'streetwear'),
-    ('Premium', 'premium'),
-    ('Running', 'running');
