@@ -70,3 +70,8 @@ $conn->query("CREATE TABLE IF NOT EXISTS categories (
     UNIQUE KEY uq_categories_slug (slug)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
+$categoryImageColumn = $conn->query("SHOW COLUMNS FROM categories LIKE 'image'");
+if ($categoryImageColumn && $categoryImageColumn->num_rows === 0) {
+    $conn->query('ALTER TABLE categories ADD COLUMN image VARCHAR(255) NULL AFTER description');
+}
+

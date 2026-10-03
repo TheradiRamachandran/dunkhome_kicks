@@ -242,6 +242,7 @@ if (isset($stmt) && $query !== '') {
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<?php require __DIR__ . '/../includes/favicon.php'; ?>
     <base href="<?= h(appBaseUrl()) ?>">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -250,9 +251,9 @@ if (isset($stmt) && $query !== '') {
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    <link rel="stylesheet" href="assets/dunkhome-ui.css?v=20261001-loader4">
-    <link rel="stylesheet" href="assets/admin-pages.css">
-    <link rel="stylesheet" href="assets/admin-navigation.css">
+    <link rel="stylesheet" href="assets/dunkhome-ui.css?v=20261003-theme2">
+    <link rel="stylesheet" href="assets/admin-pages.css?v=20261003-theme2">
+    <link rel="stylesheet" href="assets/admin-navigation.css?v=20261003-theme1">
     <style>
         .products-heading { margin-bottom: 24px; }
         .products-heading .admin-subtitle { max-width: 620px; margin-bottom: 0; }

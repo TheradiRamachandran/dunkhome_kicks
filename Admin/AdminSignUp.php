@@ -280,7 +280,8 @@ if ($message === '' && !empty($_SESSION['admin_signup_success'])) {
 ?>
 <!DOCTYPE html>
 <html lang="en">
-<head><base href="<?= h(appBaseUrl()) ?>">
+<head>
+<?php require __DIR__ . '/../includes/favicon.php'; ?><base href="<?= h(appBaseUrl()) ?>">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -288,8 +289,6 @@ if ($message === '' && !empty($_SESSION['admin_signup_success'])) {
     <meta name="description" content="Create a DunkHome Kicks administrator account.">
 
     <title>Admin Sign Up | DunkHome Kicks</title>
-
-    <link rel="icon" type="image/jpeg" href="image/logo.jpeg">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1194,7 +1193,7 @@ if ($message === '' && !empty($_SESSION['admin_signup_success'])) {
         body.light .signin-link { color:#166b43; }
         body.light .progress span { background:rgba(20,48,31,.15); }
     </style>
-    <link rel="stylesheet" href="assets/dunkhome-ui.css?v=20261001-loader4">
+    <link rel="stylesheet" href="assets/dunkhome-ui.css?v=20261003-theme2">
 </head>
 
 <body>

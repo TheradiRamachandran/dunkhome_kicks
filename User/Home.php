@@ -1,3 +1,4 @@
 <?php
-/* Home is the same storefront UI as index.php; keeping one canonical view prevents UI drift. */
+declare(strict_types=1);
+
 require __DIR__ . '/../index.php';

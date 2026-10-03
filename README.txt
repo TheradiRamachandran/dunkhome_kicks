@@ -24,6 +24,7 @@ ENHANCEMENTS
 - AdminDashboard.php: Products and Add Product navigation links added.
 - db.php: automatically creates the products table if it does not exist.
 - schema.sql: optional complete database schema.
+- Existing installations created from the older orders schema must apply database/migrations/002_legacy_orders_checkout.sql once before placing new bookings.
 
 PRODUCT STORAGE
 - Uploaded images are stored in uploads/products/.
@@ -33,6 +34,14 @@ PRODUCT STORAGE
 MAIL / OTP
 - Mailer.php uses PHP mail(). Configure your server SMTP/mail transport for production.
 - OTP expiry is 10 minutes.
+- Booking confirmation email is sent to the customer and to DUNKHOME_ORDER_ADMIN_EMAIL (defaults to theradimuthu.r@gmail.com); mail delivery status is shown on the booking confirmation page.
+- Customers receive an email after an admin changes a booking status; no email is sent when the status remains unchanged. Status emails include the tracking link and any store note.
+- The customer Contact page lists +91 9566589111 and theradiramachandran@gmail.com; contact form messages are sent to that support email through PHP mail().
+- Set DUNKHOME_PUBLIC_URL to the public application base URL so email and WhatsApp tracking links work outside the local machine.
+- Automatic WhatsApp order alerts use the WhatsApp Cloud API. The configured business sender should be 9566589111 and the admin recipient defaults to 919003341515. Configure DUNKHOME_WHATSAPP_ACCESS_TOKEN, DUNKHOME_WHATSAPP_PHONE_NUMBER_ID, and DUNKHOME_WHATSAPP_API_VERSION as server environment variables; optionally set DUNKHOME_ORDER_WHATSAPP_TO to change the recipient.
+- Create and approve a WhatsApp template named DUNKHOME_WHATSAPP_ORDER_TEMPLATE (defaults to dunkhome_new_order), set DUNKHOME_WHATSAPP_ORDER_TEMPLATE_LANGUAGE (defaults to en_US) to its language, and ensure the recipient has opted in. Its body should be `New DunkHome booking {{1}}. Customer {{2}} ({3}). Total {{4}}. Track: {{5}}.`; the five parameters are booking reference, customer name, mobile, total, and tracking URL.
+- Store WhatsApp credentials in server environment configuration, never in source files. If the WhatsApp API is not configured or rejects delivery, the confirmation page reports the issue and provides a manual WhatsApp link.
+- A booking is recorded as Pending; the current checkout does not collect payment.
 
 ADMIN BOOTSTRAP
 - The first admin account can be created from localhost when no admins exist.

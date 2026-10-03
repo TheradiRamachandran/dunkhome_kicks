@@ -179,15 +179,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'regis
 ?>
 <!DOCTYPE html>
 <html lang="en">
-<head><base href="<?= h(appBaseUrl()) ?>">
+<head>
+<?php require __DIR__ . '/../includes/favicon.php'; ?><base href="<?= h(appBaseUrl()) ?>">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#07100d">
     <meta name="description" content="Create your DunkHome Kicks account.">
 
     <title>Join DunkHome Kicks | Sign Up</title>
-    <link rel="icon" type="image/jpeg" href="image/logo.jpeg">
-
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
@@ -1045,15 +1044,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'regis
             }
         }
     </style>
-    <link rel="stylesheet" href="assets/dunkhome-ui.css?v=20261001-loader4">
+    <link rel="stylesheet" href="assets/dunkhome-ui.css?v=20261003-user-nav25">
+    <link rel="stylesheet" href="assets/auth-pages.css?v=20261003-auth1">
+    <link rel="stylesheet" href="assets/dunkhome-footer.css?v=20261003-footer3">
 </head>
-<body>
+<body class="auth-page">
+<?php require __DIR__ . '/../includes/user_nav.php'; ?>
 <div class="page">
     <header class="topbar">
-        <a class="brand" href="index.php" aria-label="DunkHome Kicks home">
-            <img class="brand-logo" src="image/logo.jpeg" alt="DunkHome Kicks">
-            <span class="brand-name">dunkhome_<span>kicks</span></span>
-        </a>
         <span class="top-hint">Secure account creation</span>
     </header>
 
@@ -1295,9 +1293,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'regis
         </section>
     </main>
 
-    <footer>
-        &copy; <?= date('Y') ?> DunkHome Kicks. All rights reserved.
-    </footer>
+    <?php require __DIR__ . '/../includes/footer.php'; ?>
 </div>
 
 <script>
@@ -1703,6 +1699,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 </script>
-    <script src="assets/dunkhome-ui.js?v=20261001-loader4" defer></script>
+    <script src="assets/dunkhome-ui.js?v=20261003-nav14" defer></script>
 </body>
 </html>

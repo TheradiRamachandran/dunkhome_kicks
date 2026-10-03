@@ -8,13 +8,32 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
     session_start();
 }
 
+function signInReturnPath(mixed $value): string
+{
+    if (!is_string($value)) {
+        return 'index.php';
+    }
+
+    if (preg_match('~^User/ProductDetails\.php\?id=[1-9][0-9]*$~D', $value)) {
+        return $value;
+    }
+
+    if ($value === 'User/Cart.php') {
+        return $value;
+    }
+
+    return 'index.php';
+}
+
+$returnPath = signInReturnPath($_POST['return_to'] ?? $_GET['return_to'] ?? null);
+
 /*
 |--------------------------------------------------------------------------
 | Already authenticated
 |--------------------------------------------------------------------------
 */
 if (isset($_SESSION['user_id'])) {
-    header('Location: ' . appUrl('index.php'));
+    header('Location: ' . appUrl($returnPath));
     exit;
 }
 
@@ -77,7 +96,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'login
                  */
                 $_SESSION['email'] = (string) $user['email'];
 
-                header('Location: ' . appUrl('index.php'));
+                header('Location: ' . appUrl($returnPath));
                 exit;
             }
         }
@@ -97,7 +116,8 @@ if ($message === '' && !empty($_SESSION['signup_success'])) {
 ?>
 <!DOCTYPE html>
 <html lang="en">
-<head><base href="<?= h(appBaseUrl()) ?>">
+<head>
+<?php require __DIR__ . '/../includes/favicon.php'; ?><base href="<?= h(appBaseUrl()) ?>">
     <meta charset="UTF-8">
     <meta
         name="viewport"
@@ -111,8 +131,6 @@ if ($message === '' && !empty($_SESSION['signup_success'])) {
     >
 
     <title>Sign In | DunkHome Kicks</title>
-
-    <link rel="icon" type="image/jpeg" href="image/logo.jpeg">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1021,24 +1039,16 @@ if ($message === '' && !empty($_SESSION['signup_success'])) {
             }
         }
     </style>
-    <link rel="stylesheet" href="assets/dunkhome-ui.css?v=20261001-loader4">
+    <link rel="stylesheet" href="assets/dunkhome-ui.css?v=20261003-user-nav25">
+    <link rel="stylesheet" href="assets/auth-pages.css?v=20261003-auth1">
+    <link rel="stylesheet" href="assets/dunkhome-footer.css?v=20261003-footer3">
 </head>
 
-<body>
+<body class="auth-page">
+<?php require __DIR__ . '/../includes/user_nav.php'; ?>
 <div class="page">
 
     <header class="topbar">
-        <a class="brand" href="index.php" aria-label="DunkHome Kicks home">
-            <img
-                class="brand-logo"
-                src="image/logo.jpeg"
-                alt="DunkHome Kicks"
-            >
-            <span class="brand-name">
-                dunkhome_<span>kicks</span>
-            </span>
-        </a>
-
         <div class="secure-label">
             <i class="fa-solid fa-shield-halved"></i>
             Secure sign in
@@ -1117,6 +1127,7 @@ if ($message === '' && !empty($_SESSION['signup_success'])) {
                     >
                         <input type="hidden" name="action" value="login">
                         <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
+                        <input type="hidden" name="return_to" value="<?= h($returnPath) ?>">
 
                         <div class="field">
                             <label class="field-label" for="emailField">
@@ -1237,7 +1248,7 @@ if ($message === '' && !empty($_SESSION['signup_success'])) {
 
                         <a
                             class="signup-link"
-                            href="User/SignUp.php"
+                            href="User/SignUp.php?return_to=<?= rawurlencode($returnPath) ?>"
                         >
                             Create an account
                             <i class="fa-solid fa-arrow-right"></i>
@@ -1255,9 +1266,7 @@ if ($message === '' && !empty($_SESSION['signup_success'])) {
         </section>
     </main>
 
-    <footer>
-        &copy; <?= date('Y') ?> DunkHome Kicks. All rights reserved.
-    </footer>
+    <?php require __DIR__ . '/../includes/footer.php'; ?>
 
 </div>
 
@@ -1406,6 +1415,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 </script>
-    <script src="assets/dunkhome-ui.js?v=20261001-loader4" defer></script>
+    <script src="assets/dunkhome-ui.js?v=20261003-nav14" defer></script>
 </body>
 </html>

@@ -1,4 +1,125 @@
-<?php declare(strict_types=1); require_once __DIR__.'/../session.php'; $userLoggedIn=userLoggedIn(); $adminLoggedIn=adminLoggedIn(); ?>
-<!DOCTYPE html><html lang="en"><head><base href="<?= h(appBaseUrl()) ?>"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><meta name="theme-color" content="#07100d"><title>Contact | DunkHome Kicks</title><link rel="icon" type="image/jpeg" href="image/logo.jpeg"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="assets/dunkhome-ui.css?v=20261001-loader4"><style>
-:root{--bg:#07100b;--card:rgba(17,28,21,.72);--text:#f4f8f5;--muted:#9aa99f;--green:#22c55e;--border:rgba(134,239,172,.13)}body{margin:0;color:var(--text);font-family:Inter,sans-serif;background:radial-gradient(circle at 15% 10%,rgba(34,197,94,.11),transparent 30%),var(--bg)}body.light{--bg:#f5f8f6;--card:#fff;--text:#102016;--muted:#607065;--border:rgba(16,32,22,.1)}a{color:inherit;text-decoration:none}.container{width:min(1180px,calc(100% - 36px));margin:auto}.top{min-height:78px;display:flex;align-items:center;justify-content:space-between}.logo{display:flex;align-items:center;gap:11px;font:700 21px "Space Grotesk"}.logo img{width:43px;height:43px;border-radius:12px;object-fit:cover}.logo span{color:var(--green)}.nav{display:flex;gap:24px;color:var(--muted);font-size:14px;font-weight:700}.hero{padding:80px 0 70px;text-align:center}.eyebrow{color:var(--green);font-size:11px;font-weight:800;letter-spacing:1.6px;text-transform:uppercase}.hero h1{font:700 54px "Space Grotesk";margin:10px 0}.hero p{color:var(--muted);line-height:1.8;max-width:650px;margin:0 auto}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;padding-bottom:80px}.card{padding:28px;border:1px solid var(--border);border-radius:22px;background:var(--card)}.icon{font-size:28px;margin-bottom:22px}.card h3{font:700 21px "Space Grotesk"}.card p{color:var(--muted);line-height:1.7;font-size:13px}@media(max-width:700px){.nav{display:none}.hero h1{font-size:40px}.grid{grid-template-columns:1fr}}
-</style></head><body><div class="container"><header class="top"><a class="logo" href="index.php"><img src="image/logo.jpeg" alt="DunkHome Kicks">DunkHome <span>Kicks</span></a><nav class="nav"><a href="User/Home.php">Home</a><a href="User/Products.php">Products</a><a href="User/Contact.php">Contact</a><?php if($adminLoggedIn):?><a href="Admin/AdminDashboard.php">Admin</a><?php endif;?><?php if($userLoggedIn):?><a href="Logout.php?scope=user">Logout</a><?php else:?><a href="User/SignIn.php">Sign In</a><?php endif;?></nav></header><main><section class="hero"><div class="eyebrow">DunkHome Kicks</div><h1>Let's talk sneakers.</h1><p>For product questions, account help, or general enquiries, use the contact details below. The existing visual language remains the same as the storefront.</p></section><section class="grid"><article class="card"><div class="icon">✉️</div><h3>Email</h3><p>support@dunkhome-kicks.local</p></article><article class="card"><div class="icon">📍</div><h3>Store</h3><p>DunkHome Kicks digital storefront. Online support available through the account experience.</p></article><article class="card"><div class="icon">🛡️</div><h3>Account help</h3><p>Use the Forgot Password page if you need to recover your account with an OTP.</p></article></section></main></div><script src="assets/dunkhome-ui.js?v=20261001-loader4" defer></script></body></html>
+<?php
+declare(strict_types=1);
+require_once __DIR__ . '/../session.php';
+$supportEmail = 'theradiramachandran@gmail.com';
+$supportPhone = '9566589111';
+$messageSent = '';
+$messageError = '';
+$contactName = '';
+$contactEmail = (string) ($_SESSION['user_email'] ?? '');
+$contactBody = '';
+$flash = $_SESSION['contact_message_flash'] ?? null;
+unset($_SESSION['contact_message_flash']);
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $postedName = $_POST['name'] ?? '';
+    $postedEmail = $_POST['email'] ?? '';
+    $postedMessage = $_POST['message'] ?? '';
+    $postedCsrfToken = $_POST['csrf_token'] ?? null;
+    $contactName = is_string($postedName) ? trim($postedName) : '';
+    $contactEmail = is_string($postedEmail) ? trim($postedEmail) : '';
+    $contactBody = is_string($postedMessage) ? trim($postedMessage) : '';
+    $nameLength = function_exists('mb_strlen') ? mb_strlen($contactName) : strlen($contactName);
+    $messageLength = function_exists('mb_strlen') ? mb_strlen($contactBody) : strlen($contactBody);
+
+    if (!is_string($postedCsrfToken) || !verifyCsrf($postedCsrfToken)) {
+        $messageError = 'Your form session expired. Refresh the page and submit your message again.';
+    } elseif ($nameLength < 2 || $nameLength > 120) {
+        $messageError = 'Enter your name using 2 to 120 characters.';
+    } elseif (!filter_var($contactEmail, FILTER_VALIDATE_EMAIL) || strlen($contactEmail) > 254) {
+        $messageError = 'Enter a valid email address so we can reply.';
+    } elseif ($messageLength < 10 || $messageLength > 3000) {
+        $messageError = 'Your message must be between 10 and 3000 characters.';
+    } else {
+        require_once __DIR__ . '/../Mailer.php';
+        $result = sendDunkHomeContactEmail($contactName, $contactEmail, $contactBody);
+        if (($result['status'] ?? '') === 'success') {
+            $_SESSION['contact_message_flash'] = ['type' => 'success', 'text' => (string) $result['message']];
+            header('Location: ' . appUrl('User/Contact.php#contactMessage'));
+            exit;
+        }
+        $messageError = (string) ($result['message'] ?? 'We could not send your message. Please call us instead.');
+    }
+}
+
+if (is_array($flash) && ($flash['type'] ?? '') === 'success') {
+    $messageSent = (string) ($flash['text'] ?? '');
+}
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<?php require __DIR__ . '/../includes/favicon.php'; ?>
+    <base href="<?= h(appBaseUrl()) ?>">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#07100d">
+    <meta name="description" content="Find help with DunkHome Kicks bookings, accounts, and products.">
+    <title>Contact Us | DunkHome Kicks</title>
+    <link rel="stylesheet" href="assets/dunkhome-ui.css?v=20261003-user-nav25">
+    <link rel="stylesheet" href="<?= h(appUrl('assets/user-premium.css?v=20261003-premium1')) ?>">
+    <link rel="stylesheet" href="<?= h(appUrl('assets/dunkhome-footer.css?v=20261003-footer3')) ?>">
+    <link rel="stylesheet" href="<?= h(appUrl('assets/customer-pages.css?v=20261003-customer6')) ?>">
+</head>
+<body class="customer-page">
+<?php require __DIR__ . '/../includes/user_nav.php'; ?>
+<main class="customer-wrap">
+    <section class="customer-simple-hero">
+        <p class="customer-eyebrow">Here when you need us</p>
+        <h1>Let’s get you<br><span>the right help.</span></h1>
+        <p>Call, email, or send us a message. For booking questions, include your booking reference so we can help faster.</p>
+    </section>
+    <section class="customer-contact-grid" aria-label="Customer support options">
+        <article class="customer-contact-card">
+            <span class="customer-contact-icon" aria-hidden="true">↗</span>
+            <p class="customer-eyebrow">Booking updates</p>
+            <h2>Check your order</h2>
+            <p>Open your booking history or enter a booking reference to see the current status and delivery timeline.</p>
+            <a class="customer-text-link" href="<?= h(appUrl('User/OrderHistory.php')) ?>">Go to order history <span aria-hidden="true">→</span></a>
+        </article>
+        <article class="customer-contact-card">
+            <span class="customer-contact-icon" aria-hidden="true">✉</span>
+            <p class="customer-eyebrow">Customer support</p>
+            <h2>Call or email us</h2>
+            <p>Prefer to speak with us directly? Reach our team using the contact details below.</p>
+            <a class="customer-text-link" href="tel:+91<?= h($supportPhone) ?>">+91 <?= h($supportPhone) ?> <span aria-hidden="true">↗</span></a>
+            <a class="customer-text-link customer-contact-email" href="mailto:<?= h($supportEmail) ?>"><?= h($supportEmail) ?> <span aria-hidden="true">↗</span></a>
+        </article>
+        <article class="customer-contact-card">
+            <span class="customer-contact-icon" aria-hidden="true">◎</span>
+            <p class="customer-eyebrow">Account access</p>
+            <h2>Need account help?</h2>
+            <p>Sign in to view your profile, booking history, and private tracking details. You can also recover access with an email code.</p>
+            <a class="customer-text-link" href="<?= h(appUrl('User/SignIn.php')) ?>">Account help <span aria-hidden="true">→</span></a>
+        </article>
+    </section>
+    <section class="customer-message-card" id="contactMessage" aria-labelledby="contactMessageTitle">
+        <div class="customer-message-intro">
+            <p class="customer-eyebrow">Send us a note</p>
+            <h2 id="contactMessageTitle">What can we help with?</h2>
+            <p>Share a few details and our team will get back to you at the email address you provide.</p>
+            <div class="customer-message-contact"><span>Call us</span><a href="tel:+91<?= h($supportPhone) ?>">+91 <?= h($supportPhone) ?></a></div>
+            <div class="customer-message-contact"><span>Email</span><a href="mailto:<?= h($supportEmail) ?>"><?= h($supportEmail) ?></a></div>
+        </div>
+        <form class="customer-contact-form" method="post" action="<?= h(appUrl('User/Contact.php#contactMessage')) ?>">
+            <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
+            <label for="contactName">Your name</label>
+            <input id="contactName" name="name" type="text" minlength="2" maxlength="120" autocomplete="name" value="<?= h($contactName) ?>" placeholder="Name" required>
+            <label for="contactEmail">Email address</label>
+            <input id="contactEmail" name="email" type="email" maxlength="254" autocomplete="email" value="<?= h($contactEmail) ?>" placeholder="you@example.com" required>
+            <label for="contactBody">Message</label>
+            <textarea id="contactBody" name="message" minlength="10" maxlength="3000" rows="6" placeholder="Tell us how we can help..." required><?= h($contactBody) ?></textarea>
+            <?php if ($messageError !== ''): ?>
+                <p class="customer-form-error" role="alert"><?= h($messageError) ?></p>
+            <?php elseif ($messageSent !== ''): ?>
+                <p class="customer-form-success" role="status"><?= h($messageSent) ?></p>
+            <?php endif; ?>
+            <button class="customer-button customer-button-primary" type="submit">Send message <span aria-hidden="true">→</span></button>
+            <p class="customer-form-footnote">Your message will be emailed to our support team.</p>
+        </form>
+    </section>
+</main>
+<?php require __DIR__ . '/../includes/footer.php'; ?>
+<script src="<?= h(appUrl('assets/dunkhome-ui.js?v=20261003-nav14')) ?>" defer></script>
+</body>
+</html>

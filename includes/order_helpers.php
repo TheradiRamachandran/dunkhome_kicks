@@ -77,3 +77,28 @@ function tableHasColumn(mysqli $conn, string $table, string $column): bool
 
     return $exists;
 }
+
+function loadOrderStatusHistory(mysqli $conn, int $orderId): array
+{
+    if (tableHasColumn($conn, 'order_status_history', 'new_status')) {
+        $sql = 'SELECT new_status,created_at,note FROM order_status_history WHERE order_id=? ORDER BY created_at,id';
+    } else {
+        $sql = 'SELECT status AS new_status,created_at,note FROM order_status_history WHERE order_id=? ORDER BY created_at,id';
+    }
+
+    $statement = $conn->prepare($sql);
+    if (!$statement) {
+        throw new RuntimeException('Order tracking history is temporarily unavailable.');
+    }
+
+    $statement->bind_param('i', $orderId);
+    $statement->execute();
+    $result = $statement->get_result();
+    $history = [];
+    while ($row = $result->fetch_assoc()) {
+        $history[] = $row;
+    }
+    $statement->close();
+
+    return $history;
+}

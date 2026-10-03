@@ -132,18 +132,18 @@ $emailInput = (string) ($_SESSION['admin_reset_email'] ?? $emailInput);
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<?php require __DIR__ . '/../includes/favicon.php'; ?>
     <base href="<?= h(appBaseUrl()) ?>">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#07100d">
     <meta name="description" content="Reset your DunkHome Kicks administrator password securely.">
     <title>Admin password recovery | DunkHome Kicks</title>
-    <link rel="icon" type="image/jpeg" href="image/logo.jpeg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    <link rel="stylesheet" href="assets/dunkhome-ui.css?v=20261001-loader4">
+    <link rel="stylesheet" href="assets/dunkhome-ui.css?v=20261003-theme2">
     <style>
         :root { --bg:#07100d; --white:#f8faf8; --muted:#9baba3; --line:rgba(255,255,255,.10); --line-strong:rgba(255,255,255,.17); --green:#79e6aa; --orange:#ff9a62; --danger:#ff7b7b; --shadow:0 35px 100px rgba(0,0,0,.44); }
         * { box-sizing: border-box; }

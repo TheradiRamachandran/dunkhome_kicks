@@ -184,7 +184,8 @@ if (($_GET['action'] ?? '') === 'live_orders') {
 <!DOCTYPE html>
 <html lang="en">
 
-<head><base href="<?= h(appBaseUrl()) ?>">
+<head>
+<?php require __DIR__ . '/../includes/favicon.php'; ?><base href="<?= h(appBaseUrl()) ?>">
 
     <meta charset="UTF-8">
 
@@ -201,12 +202,6 @@ if (($_GET['action'] ?? '') === 'live_orders') {
     <title>
         Admin Dashboard | DunkHome Kicks
     </title>
-
-    <link
-        rel="icon"
-        type="image/jpeg"
-        href="image/logo.jpeg"
-    >
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
 
@@ -2169,8 +2164,8 @@ body.light .live-status { color:#62746a; }
 }
 
 </style>
-    <link rel="stylesheet" href="assets/dunkhome-ui.css?v=20261001-loader4">
-    <link rel="stylesheet" href="assets/admin-navigation.css">
+    <link rel="stylesheet" href="assets/dunkhome-ui.css?v=20261003-theme2">
+    <link rel="stylesheet" href="assets/admin-navigation.css?v=20261003-theme1">
 </head>
 
 <body>

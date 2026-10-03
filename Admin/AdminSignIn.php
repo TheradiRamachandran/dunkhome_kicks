@@ -103,7 +103,8 @@ if (
 ?>
 <!DOCTYPE html>
 <html lang="en">
-<head><base href="<?= h(appBaseUrl()) ?>">
+<head>
+<?php require __DIR__ . '/../includes/favicon.php'; ?><base href="<?= h(appBaseUrl()) ?>">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -111,8 +112,6 @@ if (
     <meta name="description" content="Administrator sign in for DunkHome Kicks.">
 
     <title>Admin Sign In | DunkHome Kicks</title>
-
-    <link rel="icon" type="image/jpeg" href="image/logo.jpeg">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -832,7 +831,7 @@ if (
         body.light .signup-link { color:#166b43; }
         body.light .forgot { color:#276c48; }
     </style>
-    <link rel="stylesheet" href="assets/dunkhome-ui.css?v=20261001-loader4">
+    <link rel="stylesheet" href="assets/dunkhome-ui.css?v=20261003-theme2">
 </head>
 
 <body>

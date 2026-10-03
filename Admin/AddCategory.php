@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../db.php';
 require_once __DIR__ . '/../session.php';
+require_once __DIR__ . '/../includes/category_image_helpers.php';
 requireAdmin();
 
 $adminEmail = (string) ($_SESSION['admin_email'] ?? 'Administrator');
@@ -41,22 +42,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($exists) {
                 $message = 'A category with this name or slug already exists.';
             } else {
-            $stmt = $conn->prepare('INSERT INTO categories (name, slug, description) VALUES (?, ?, ?)');
-            if (!$stmt) {
-                $message = 'Unable to prepare the category. Please try again.';
-            } else {
-                $stmt->bind_param('sss', $name, $slug, $description);
-                if ($stmt->execute()) {
-                    $message = 'Category added successfully.';
-                    $messageType = 'success';
-                    $name = '';
-                    $description = '';
-                    $slugInput = '';
+                $imageUpload = storeCategoryImageUpload($_FILES['image'] ?? null);
+                if ($imageUpload['error'] !== null) {
+                    $message = (string) $imageUpload['error'];
+                } elseif (!is_string($imageUpload['path'])) {
+                    $message = 'Choose an image for this category.';
                 } else {
-                    $message = 'Unable to save this category. Check that its name and slug are unique.';
+                    $imagePath = $imageUpload['path'];
+                    $stmt = $conn->prepare('INSERT INTO categories (name, slug, description, image) VALUES (?, ?, ?, ?)');
+                    if (!$stmt) {
+                        removeManagedCategoryImage($imagePath);
+                        $message = 'Unable to prepare the category. Please try again.';
+                    } else {
+                        $stmt->bind_param('ssss', $name, $slug, $description, $imagePath);
+                        if ($stmt->execute()) {
+                            $message = 'Category added successfully.';
+                            $messageType = 'success';
+                            $name = '';
+                            $description = '';
+                            $slugInput = '';
+                        } else {
+                            removeManagedCategoryImage($imagePath);
+                            $message = 'Unable to save this category. Check that its name and slug are unique.';
+                        }
+                        $stmt->close();
+                    }
                 }
-                $stmt->close();
-            }
             }
         }
     }
@@ -65,6 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<?php require __DIR__ . '/../includes/favicon.php'; ?>
     <base href="<?= h(appBaseUrl()) ?>">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -73,9 +85,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    <link rel="stylesheet" href="assets/dunkhome-ui.css?v=20261001-loader4">
-    <link rel="stylesheet" href="assets/admin-pages.css">
-    <link rel="stylesheet" href="assets/admin-navigation.css">
+    <link rel="stylesheet" href="assets/dunkhome-ui.css?v=20261003-theme2">
+    <link rel="stylesheet" href="assets/admin-pages.css?v=20261003-theme2">
+    <link rel="stylesheet" href="assets/admin-navigation.css?v=20261003-theme1">
     <style>
         .category-heading { display:flex; align-items:flex-end; justify-content:space-between; gap:20px; margin-bottom:26px; }
         .category-heading .admin-subtitle { max-width:540px; margin-bottom:0; }
@@ -91,12 +103,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .category-field label { display:flex; justify-content:space-between; gap:12px; margin-bottom:8px; color:var(--admin-text); font-size:11px; font-weight:700; }
         .category-field label span { color:var(--admin-muted); font-size:10px; font-weight:500; }
         .category-field input,.category-field textarea { width:100%; min-height:44px; padding:11px 12px; border:1px solid var(--admin-line); border-radius:9px; outline:none; color:var(--admin-text); background:rgba(255,255,255,.035); font:12px "DM Sans",sans-serif; transition:border-color .18s,box-shadow .18s,background .18s; }
+        .category-field input[type=file] { min-height:58px; padding:8px; border-color:rgba(121,230,170,.2); border-radius:11px; background:linear-gradient(135deg,rgba(121,230,170,.07),rgba(255,255,255,.025)); color:var(--admin-muted); cursor:pointer; }
+        .category-field input[type=file]::file-selector-button { min-height:39px; margin-right:12px; padding:0 14px; border:0; border-radius:8px; color:#06140d; background:linear-gradient(135deg,#90efbb,#56d993); font:700 11px "DM Sans",sans-serif; cursor:pointer; transition:filter .18s,transform .18s; }
+        .category-field input[type=file]::file-selector-button:hover { filter:brightness(1.06); transform:translateY(-1px); }
+        .category-field input[type=file]:hover { border-color:rgba(121,230,170,.45); }
+        .category-field input[type=file]:focus-visible { outline:2px solid rgba(121,230,170,.65); outline-offset:3px; }
+        body.light .category-field input[type=file] { background:linear-gradient(135deg,rgba(121,230,170,.12),rgba(255,255,255,.95)); }
         .category-field textarea { min-height:116px; resize:vertical; line-height:1.6; }
         .category-field input::placeholder,.category-field textarea::placeholder { color:#78877e; }
         .category-field input:focus,.category-field textarea:focus { border-color:rgba(121,230,170,.62); background:rgba(121,230,170,.045); box-shadow:0 0 0 3px rgba(121,230,170,.09); }
         body.light .category-field input,body.light .category-field textarea { background:rgba(255,255,255,.85); }
         body.light .category-field input:focus,body.light .category-field textarea:focus { background:#fff; }
         .category-field-help { margin:7px 0 0; color:var(--admin-muted); font-size:10px; line-height:1.5; }
+        .category-image-preview { display:block; width:min(220px,100%); aspect-ratio:16/10; margin-top:12px; border:1px solid var(--admin-line); border-radius:10px; object-fit:cover; }
+        .category-image-preview[hidden] { display:none; }
         .slug-preview { display:flex; align-items:center; gap:8px; margin-top:8px; color:var(--admin-muted); font-size:10px; }
         .slug-preview code { max-width:100%; overflow:hidden; color:var(--admin-green); text-overflow:ellipsis; white-space:nowrap; }
         body.light .slug-preview code { color:#236844; }
@@ -148,7 +168,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
                 <span class="category-form-icon" aria-hidden="true"><i class="fa-solid fa-layer-group"></i></span>
             </div>
-            <form class="category-form" method="post">
+            <form class="category-form" method="post" enctype="multipart/form-data">
                 <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
                 <div class="category-fields">
                 <div class="admin-field category-field">
@@ -164,6 +184,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="admin-field category-field full">
                     <label for="description">Description <span><output id="descriptionCount">0 / 2000</output></span></label>
                     <textarea id="description" name="description" maxlength="2000" placeholder="Describe the products customers will find in this collection."><?= h($description) ?></textarea>
+                </div>
+                <div class="admin-field category-field full">
+                    <label for="categoryImage">Category image <span>JPG, PNG or WEBP · max 5 MB</span></label>
+                    <input id="categoryImage" name="image" type="file" accept="image/jpeg,image/png,image/webp" required>
+                    <img class="category-image-preview" id="categoryImagePreview" alt="Selected category image preview" hidden>
+                    <p class="category-field-help">Choose one image to represent this category.</p>
                 </div>
                 </div>
                 <div class="category-form-footer">
@@ -204,6 +230,19 @@ categoryName.addEventListener('input', updateCategoryPreview);
 categorySlug.addEventListener('input', updateCategoryPreview);
 categoryDescription.addEventListener('input', updateCategoryPreview);
 updateCategoryPreview();
+
+const categoryImageInput = document.getElementById('categoryImage');
+const categoryImagePreview = document.getElementById('categoryImagePreview');
+categoryImageInput.addEventListener('change', () => {
+    const file = categoryImageInput.files[0];
+    if (!file) {
+        categoryImagePreview.hidden = true;
+        categoryImagePreview.removeAttribute('src');
+        return;
+    }
+    categoryImagePreview.src = URL.createObjectURL(file);
+    categoryImagePreview.hidden = false;
+});
 </script>
 </body>
 </html>

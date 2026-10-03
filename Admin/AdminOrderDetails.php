@@ -3,6 +3,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../db.php';
 require_once __DIR__ . '/../session.php';
 require_once __DIR__ . '/../includes/order_helpers.php';
+require_once __DIR__ . '/../Mailer.php';
 requireAdmin();
 $adminEmail = (string) ($_SESSION['admin_email'] ?? 'Administrator');
 $emailName = explode('@', $adminEmail)[0] ?? '';
@@ -73,6 +74,16 @@ if ($order && $_SERVER['REQUEST_METHOD'] === 'POST') {
                 $history->close();
             }
             $conn->commit();
+            if ($newStatus !== $previousStatus) {
+                try {
+                    $emailResult = sendDunkHomeOrderStatusEmail($order, $previousStatus, $newStatus, $note);
+                    if (($emailResult['status'] ?? '') !== 'success') {
+                        error_log('Order status notification was not sent for booking ' . $order['order_code'] . ': ' . ($emailResult['message'] ?? 'Unknown email error.'));
+                    }
+                } catch (Throwable $emailError) {
+                    error_log('Order status notification failed for booking ' . $order['order_code'] . ': ' . $emailError->getMessage());
+                }
+            }
             header('Location: ' . appUrl('Admin/AdminOrderDetails.php?code=' . rawurlencode($code) . '&updated=1'));
             exit;
         } catch (Throwable $error) {
@@ -116,6 +127,7 @@ if ($order) {
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<?php require __DIR__ . '/../includes/favicon.php'; ?>
     <base href="<?= h(appBaseUrl()) ?>">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -124,9 +136,9 @@ if ($order) {
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    <link rel="stylesheet" href="assets/dunkhome-ui.css?v=20261001-loader4">
-    <link rel="stylesheet" href="assets/admin-pages.css">
-    <link rel="stylesheet" href="assets/admin-navigation.css">
+    <link rel="stylesheet" href="assets/dunkhome-ui.css?v=20261003-theme2">
+    <link rel="stylesheet" href="assets/admin-pages.css?v=20261003-theme2">
+    <link rel="stylesheet" href="assets/admin-navigation.css?v=20261003-theme1">
     <style>
         .order-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; margin-bottom: 22px; }
         .order-heading .admin-title { overflow-wrap: anywhere; }

@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../db.php';
 require_once __DIR__ . '/../session.php';
+require_once __DIR__ . '/../includes/category_image_helpers.php';
 requireAdmin();
 
 $adminEmail = (string) ($_SESSION['admin_email'] ?? 'Administrator');
@@ -58,7 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     } elseif (!$conn->begin_transaction()) {
                         $message = 'Unable to update this category. Please try again.';
                     } else {
-                        $current = $conn->prepare('SELECT name FROM categories WHERE id = ? LIMIT 1');
+                        $current = $conn->prepare('SELECT name, image FROM categories WHERE id = ? LIMIT 1');
                         if (!$current) {
                             $conn->rollback();
                             $message = 'Unable to load this category. Please try again.';
@@ -72,15 +73,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 $conn->rollback();
                                 $message = 'Category not found.';
                             } else {
-                                $update = $conn->prepare('UPDATE categories SET name = ?, slug = ?, description = ? WHERE id = ?');
+                                $imageUpload = storeCategoryImageUpload($_FILES['image'] ?? null);
+                                if ($imageUpload['error'] !== null) {
+                                    $conn->rollback();
+                                    $message = (string) $imageUpload['error'];
+                                } else {
+                                $oldImagePath = (string) ($currentCategory['image'] ?? '');
+                                $newImagePath = $imageUpload['path'];
+                                $imagePath = is_string($newImagePath) ? $newImagePath : $oldImagePath;
+                                $update = $conn->prepare('UPDATE categories SET name = ?, slug = ?, description = ?, image = ? WHERE id = ?');
                                 $updateProducts = $conn->prepare('UPDATE products SET category = ? WHERE category COLLATE utf8mb4_unicode_ci = CONVERT(? USING utf8mb4) COLLATE utf8mb4_unicode_ci');
 
                                 if (!$update || !$updateProducts) {
                                     $conn->rollback();
+                                    if (is_string($newImagePath)) {
+                                        removeManagedCategoryImage($newImagePath);
+                                    }
                                     $message = 'Unable to prepare this category update. Please try again.';
                                 } else {
                                     $oldName = (string) $currentCategory['name'];
-                                    $update->bind_param('sssi', $name, $slug, $description, $categoryId);
+                                    $update->bind_param('ssssi', $name, $slug, $description, $imagePath, $categoryId);
                                     $updated = $update->execute();
                                     $update->close();
 
@@ -93,12 +105,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     $updateProducts->close();
 
                                     if ($updated && $updatedProducts && $conn->commit()) {
+                                        if (is_string($newImagePath) && $oldImagePath !== '') {
+                                            removeManagedCategoryImage($oldImagePath);
+                                        }
                                         $message = 'Category updated successfully.';
                                         $messageType = 'success';
                                     } else {
                                         $conn->rollback();
+                                        if (is_string($newImagePath)) {
+                                            removeManagedCategoryImage($newImagePath);
+                                        }
                                         $message = 'Unable to update this category. Check that its name and slug are unique.';
                                     }
+                                }
                                 }
                             }
                         }
@@ -106,7 +125,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
         } elseif ($action === 'delete') {
-            $stmt = $conn->prepare('SELECT name FROM categories WHERE id = ? LIMIT 1');
+            $stmt = $conn->prepare('SELECT name, image FROM categories WHERE id = ? LIMIT 1');
             if (!$stmt) {
                 error_log('Category lookup preparation failed: ' . $conn->error);
                 $message = 'Unable to load this category. Please try again.';
@@ -145,9 +164,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             } else {
                                 $delete->bind_param('i', $categoryId);
                                 $deleted = $delete->execute();
-                                $message = $deleted ? 'Category deleted.' : 'Unable to delete this category.';
-                                $messageType = $deleted && $delete->affected_rows > 0 ? 'success' : 'error';
+                                $deletedCategory = $deleted && $delete->affected_rows > 0;
+                                $message = $deletedCategory ? 'Category deleted.' : 'Unable to delete this category.';
+                                $messageType = $deletedCategory ? 'success' : 'error';
                                 $delete->close();
+                                if ($deletedCategory) {
+                                    removeManagedCategoryImage((string) ($category['image'] ?? ''));
+                                }
                             }
                         }
                     }
@@ -159,11 +182,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $categories = [];
 $result = $conn->query(
-    'SELECT c.id, c.name, c.slug, c.description, c.is_active, c.created_at,
+    'SELECT c.id, c.name, c.slug, c.description, c.image, c.is_active, c.created_at,
             COUNT(p.id) AS product_count
      FROM categories c
     LEFT JOIN products p ON p.category COLLATE utf8mb4_unicode_ci = c.name
-     GROUP BY c.id, c.name, c.slug, c.description, c.is_active, c.created_at
+    GROUP BY c.id, c.name, c.slug, c.description, c.image, c.is_active, c.created_at
      ORDER BY c.name'
 );
 if ($result) {
@@ -182,6 +205,7 @@ foreach ($categories as $category) {
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<?php require __DIR__ . '/../includes/favicon.php'; ?>
     <base href="<?= h(appBaseUrl()) ?>">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -190,9 +214,9 @@ foreach ($categories as $category) {
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    <link rel="stylesheet" href="assets/dunkhome-ui.css?v=20261001-loader4">
-    <link rel="stylesheet" href="assets/admin-pages.css">
-    <link rel="stylesheet" href="assets/admin-navigation.css">
+    <link rel="stylesheet" href="assets/dunkhome-ui.css?v=20261003-theme2">
+    <link rel="stylesheet" href="assets/admin-pages.css?v=20261003-theme2">
+    <link rel="stylesheet" href="assets/admin-navigation.css?v=20261003-theme1">
     <style>
         .category-heading { margin-bottom: 24px; }
         .category-heading .admin-subtitle { max-width: 620px; margin-bottom: 0; }
@@ -201,6 +225,8 @@ foreach ($categories as $category) {
         .category-count strong,.category-count span { display: block; }
         .category-count strong { color: var(--admin-text); font-size: 13px; }
         .category-count span { margin-top: 4px; color: var(--admin-muted); font-size: 10px; }
+        .category-ident { display:flex; align-items:center; gap:11px; }
+        .category-thumbnail { width:44px; height:44px; flex:0 0 44px; border:1px solid var(--admin-line); border-radius:9px; object-fit:cover; background:rgba(255,255,255,.04); }
         .category-add { flex: 0 0 auto; }
         .category-table-wrap { overflow-x: auto; }
         .category-table { width: 100%; min-width: 700px; border-collapse: collapse; }
@@ -227,7 +253,16 @@ foreach ($categories as $category) {
         .category-edit-fields { display: grid; gap: 14px; }
         .category-edit-fields label { display: block; margin-bottom: 6px; color: var(--admin-text); font-size: 10px; font-weight: 700; }
         .category-edit-fields input,.category-edit-fields textarea { width: 100%; min-height: 42px; padding: 10px 11px; border: 1px solid var(--admin-line); border-radius: 8px; outline: none; color: var(--admin-text); background: rgba(255,255,255,.035); font: 12px "DM Sans",sans-serif; }
+        .category-edit-fields input[type=file] { min-height:58px; padding:8px; border-style:solid; border-color:rgba(121,230,170,.2); border-radius:11px; background:linear-gradient(135deg,rgba(121,230,170,.07),rgba(255,255,255,.025)); color:var(--admin-muted); cursor:pointer; }
+        .category-edit-fields input[type=file]::file-selector-button { min-height:39px; margin-right:12px; padding:0 14px; border:0; border-radius:8px; color:#06140d; background:linear-gradient(135deg,#90efbb,#56d993); font:700 11px "DM Sans",sans-serif; cursor:pointer; transition:filter .18s,transform .18s; }
+        .category-edit-fields input[type=file]::file-selector-button:hover { filter:brightness(1.06); transform:translateY(-1px); }
+        .category-edit-fields input[type=file]:hover { border-color:rgba(121,230,170,.45); }
+        .category-edit-fields input[type=file]:focus-visible { outline:2px solid rgba(121,230,170,.65); outline-offset:3px; }
+        body.light .category-edit-fields input[type=file] { background:linear-gradient(135deg,rgba(121,230,170,.12),rgba(255,255,255,.95)); }
         .category-edit-fields textarea { min-height: 96px; resize: vertical; }
+        .category-edit-image-preview { display:block; width:160px; aspect-ratio:16/10; margin-top:9px; border:1px solid var(--admin-line); border-radius:9px; object-fit:cover; }
+        .category-edit-image-preview[hidden] { display:none; }
+        .category-edit-help { margin:6px 0 0; color:var(--admin-muted); font-size:10px; line-height:1.5; }
         .category-edit-fields input:focus,.category-edit-fields textarea:focus { border-color: rgba(121,230,170,.62); box-shadow: 0 0 0 3px rgba(121,230,170,.09); }
         .category-dialog-actions { display: flex; justify-content: flex-end; gap: 9px; margin-top: 20px; }
         .category-delete-dialog { width: min(440px, calc(100% - 24px)); }
@@ -310,7 +345,7 @@ foreach ($categories as $category) {
                         <tbody>
                         <?php foreach ($categories as $category): ?>
                             <tr>
-                                <td data-label="Category"><strong><?= h((string) $category['name']) ?></strong><?php if ($category['description']): ?><br><small><?= h((string) $category['description']) ?></small><?php endif; ?></td>
+                                <td data-label="Category"><div class="category-ident"><?php if (!empty($category['image'])): ?><img class="category-thumbnail" src="<?= h(appUrl((string) $category['image'])) ?>" alt=""><?php else: ?><span class="category-thumbnail" aria-hidden="true"></span><?php endif; ?><div><strong><?= h((string) $category['name']) ?></strong><?php if ($category['description']): ?><br><small><?= h((string) $category['description']) ?></small><?php endif; ?></div></div></td>
                                 <td data-label="Slug"><code><?= h((string) $category['slug']) ?></code></td>
                                 <td data-label="Products"><?= (int) $category['product_count'] ?></td>
                                 <td data-label="Status"><span class="category-status <?= (int) $category['is_active'] === 1 ? 'active' : '' ?>"><?= (int) $category['is_active'] === 1 ? 'Active' : 'Inactive' ?></span></td>
@@ -318,7 +353,7 @@ foreach ($categories as $category) {
                                     <form class="category-actions" method="post">
                                         <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
                                         <input type="hidden" name="category_id" value="<?= (int) $category['id'] ?>">
-                                        <button class="admin-button" type="button" data-category-edit data-id="<?= (int) $category['id'] ?>" data-name="<?= h((string) $category['name']) ?>" data-slug="<?= h((string) $category['slug']) ?>" data-description="<?= h((string) ($category['description'] ?? '')) ?>" aria-label="Edit <?= h((string) $category['name']) ?>">Edit</button>
+                                        <button class="admin-button" type="button" data-category-edit data-id="<?= (int) $category['id'] ?>" data-name="<?= h((string) $category['name']) ?>" data-slug="<?= h((string) $category['slug']) ?>" data-description="<?= h((string) ($category['description'] ?? '')) ?>" data-image="<?= !empty($category['image']) ? h(appUrl((string) $category['image'])) : '' ?>" aria-label="Edit <?= h((string) $category['name']) ?>">Edit</button>
                                         <?php if ((int) $category['is_active'] !== 1): ?>
                                             <button class="admin-button" name="action" value="activate" type="submit" aria-label="Activate <?= h((string) $category['name']) ?>">Activate</button>
                                         <?php endif; ?>
@@ -333,7 +368,7 @@ foreach ($categories as $category) {
             <?php endif; ?>
         </section>
         <dialog class="category-dialog" id="categoryEditDialog" aria-labelledby="categoryEditTitle">
-            <form method="post">
+            <form method="post" enctype="multipart/form-data">
                 <div class="category-dialog-head">
                     <div>
                         <h2 id="categoryEditTitle">Edit category</h2>
@@ -355,6 +390,12 @@ foreach ($categories as $category) {
                     <div>
                         <label for="editCategoryDescription">Description</label>
                         <textarea id="editCategoryDescription" name="description" maxlength="2000"></textarea>
+                    </div>
+                    <div>
+                        <label for="editCategoryImage">Category image</label>
+                        <input id="editCategoryImage" name="image" type="file" accept="image/jpeg,image/png,image/webp">
+                        <img class="category-edit-image-preview" id="editCategoryImagePreview" alt="Current category image preview" hidden>
+                        <p class="category-edit-help">Choose a new JPG, PNG or WEBP image to replace the current one. Maximum size: 5 MB.</p>
                     </div>
                 </div>
                 <div class="category-dialog-actions">
@@ -395,9 +436,27 @@ document.querySelectorAll('[data-category-edit]').forEach(button => {
         document.getElementById('editCategoryName').value = button.dataset.name;
         document.getElementById('editCategorySlug').value = button.dataset.slug;
         document.getElementById('editCategoryDescription').value = button.dataset.description;
+        const imageInput = document.getElementById('editCategoryImage');
+        const imagePreview = document.getElementById('editCategoryImagePreview');
+        imageInput.value = '';
+        imagePreview.dataset.currentImage = button.dataset.image || '';
+        imagePreview.src = imagePreview.dataset.currentImage;
+        imagePreview.hidden = !imagePreview.dataset.currentImage;
         categoryEditDialog.showModal();
         document.getElementById('editCategoryName').focus();
     });
+});
+
+document.getElementById('editCategoryImage')?.addEventListener('change', event => {
+    const input = event.currentTarget;
+    const preview = document.getElementById('editCategoryImagePreview');
+    if (!input.files[0]) {
+        preview.src = preview.dataset.currentImage || '';
+        preview.hidden = !preview.dataset.currentImage;
+        return;
+    }
+    preview.src = URL.createObjectURL(input.files[0]);
+    preview.hidden = false;
 });
 
 document.getElementById('cancelCategoryEdit')?.addEventListener('click', () => categoryEditDialog.close());

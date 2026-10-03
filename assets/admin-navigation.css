@@ -147,6 +147,9 @@ body.light .app .nav .admin-nav-link,
 body.light .app .admin-info span { color:#5a6d61; }
 body.light .app .nav .admin-nav-link:hover { color:#17251d; background:rgba(20,48,31,.045); }
 body.light .app .admin-mini { border-color:var(--admin-nav-line); background:rgba(20,48,31,.025); }
+body.light .admin-brand span,
+body.light .app .brand-name span,
+body.light .admin-sidebar-layout .admin-brand span { color:#236847; }
 
 @media (max-width:760px) {
 	.app .sidebar {

@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 760" fill="none">
+  <defs>
+    <linearGradient id="panel" x1="108" y1="48" x2="870" y2="710" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#143D2B"/>
+      <stop offset=".52" stop-color="#092419"/>
+      <stop offset="1" stop-color="#06150F"/>
+    </linearGradient>
+    <linearGradient id="sole" x1="246" y1="515" x2="747" y2="607" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#E8F3E8"/>
+      <stop offset=".45" stop-color="#9DD9B8"/>
+      <stop offset="1" stop-color="#54D69A"/>
+    </linearGradient>
+    <linearGradient id="upper" x1="324" y1="279" x2="665" y2="522" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#D9E8DB"/>
+      <stop offset=".43" stop-color="#76D9A4"/>
+      <stop offset="1" stop-color="#198456"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0" cy="0" r="1" gradientTransform="matrix(0 323 -386 0 532 337)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#38E6A2" stop-opacity=".3"/>
+      <stop offset="1" stop-color="#38E6A2" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="shadow" x="140" y="190" width="696" height="504" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="18"/>
+      <feOffset dy="20"/>
+      <feColorMatrix values="0 0 0 0 0.01 0 0 0 0 0.08 0 0 0 0 0.04 0 0 0 .5 0"/>
+      <feBlend in2="SourceGraphic" result="shadow"/>
+      <feComposite in="SourceGraphic" in2="shadow" operator="over"/>
+    </filter>
+  </defs>
+  <rect width="960" height="760" rx="42" fill="url(#panel)"/>
+  <rect width="960" height="760" rx="42" fill="url(#glow)"/>
+  <circle cx="488" cy="365" r="280" stroke="#8AF3BF" stroke-opacity=".14"/>
+  <circle cx="488" cy="365" r="226" stroke="#8AF3BF" stroke-opacity=".1" stroke-dasharray="2 13"/>
+  <path d="M79 535C206 474 295 472 413 484c151 15 279-32 472-143" stroke="#A3F6C8" stroke-opacity=".12"/>
+  <path d="M71 563c157-75 275-53 393-46 164 10 272-51 422-137" stroke="#A3F6C8" stroke-opacity=".08"/>
+  <g filter="url(#shadow)">
+    <path d="M208 507c48-5 89-23 120-55l58-62c19-20 43-31 70-31h42c26 0 44 9 60 27l53 58c24 26 49 40 86 48l69 15c20 4 34 21 34 42 0 19-14 35-33 39-75 17-153 25-240 25H310c-55 0-96-11-123-32-15-12-19-30-10-46 7-14 17-24 31-28Z" fill="url(#upper)" stroke="#C7F6D9" stroke-opacity=".78" stroke-width="3"/>
+    <path d="m386 393-58 61c-31 32-72 50-120 55-14 3-24 14-31 28-9 16-5 34 10 46 27 21 68 32 123 32h317c87 0 165-8 240-25 19-4 33-20 33-39 0-21-14-38-34-42l-69-15c-37-8-62-22-86-48l-53-58c-16-18-34-27-60-27h-42c-27 0-51 11-70 31Z" stroke="#E1F7E7" stroke-opacity=".58" stroke-width="3"/>
+    <path d="M248 519c49-10 85-30 120-66l55-58c12-13 28-20 47-20h23l-63 112c-13 23-2 52 24 60l79 24H310c-44 0-76-7-99-22-6-4-9-10-6-16 7-8 19-12 43-14Z" fill="#0A2117" fill-opacity=".87" stroke="#B8F3CE" stroke-opacity=".43" stroke-width="2"/>
+    <path d="m507 375 56 61c25 27 55 47 94 57l-20 31c-12 18-34 25-54 17l-90-35c-15-6-22-24-14-39l47-92" fill="#0A2519" fill-opacity=".88" stroke="#B8F3CE" stroke-opacity=".54" stroke-width="3"/>
+    <path d="M393 426c27 9 56 22 82 40 28 20 54 42 79 66" stroke="#DBFAE5" stroke-opacity=".88" stroke-width="9" stroke-linecap="round"/>
+    <path d="m370 448 130 64M389 427l127 66M414 406l126 67" stroke="#DFF7E5" stroke-opacity=".75" stroke-width="7" stroke-linecap="round"/>
+    <path d="m435 488 35-19 37 24-37 18-35-23Z" fill="#66E5A4" fill-opacity=".82"/>
+    <path d="M232 586c112 20 274 22 426 7 69-7 123-17 163-29 15-5 31 3 35 18 5 15-4 31-19 35-75 20-170 32-286 35H309c-60 0-103-12-132-34-13-10-15-28-4-40 12-13 32-16 48-8 3 1 6 3 11 5Z" fill="url(#sole)" stroke="#F1F8ED" stroke-width="4"/>
+    <path d="M237 601c122 21 293 20 449 5 65-6 118-16 158-28" stroke="#F5FFF6" stroke-opacity=".88" stroke-width="6" stroke-linecap="round"/>
+    <path d="m289 634 16 15m36-13 16 14m41-13 16 13m43-13 16 12m46-13 15 11m47-13 15 10m47-13 14 9m47-12 13 8" stroke="#14643F" stroke-opacity=".62" stroke-width="4" stroke-linecap="round"/>
+    <path d="M617 478c20 4 42 2 62-9 11-6 22-17 30-28" stroke="#D8F8E2" stroke-opacity=".62" stroke-width="3" stroke-linecap="round"/>
+  </g>
+  <circle cx="201" cy="266" r="5" fill="#9AF5C5"/>
+  <circle cx="766" cy="245" r="4" fill="#9AF5C5" fill-opacity=".8"/>
+  <circle cx="750" cy="561" r="6" fill="#9AF5C5" fill-opacity=".7"/>
+  <path d="M201 252v28m-14-14h28M766 234v22m-11-11h22" stroke="#9AF5C5" stroke-opacity=".55"/>
+  <text x="74" y="102" fill="#A5B8AE" font-family="Arial,sans-serif" font-size="14" font-weight="700" letter-spacing="5">DUNKHOME / ROTATION 01</text>
+  <text x="76" y="685" fill="#EAF8EF" font-family="Arial,sans-serif" font-size="12" font-weight="700" letter-spacing="4">FIND YOUR PACE</text>
+  <text x="884" y="685" fill="#75F7C7" font-family="Arial,sans-serif" font-size="12" font-weight="700" text-anchor="end" letter-spacing="3">EST. DHK</text>
+</svg>
