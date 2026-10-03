@@ -9,7 +9,7 @@ $userNavCartCount = array_sum(array_map('intval', $userNavCart));
 <header class="dh-user-header" id="header">
     <div class="dh-user-header-inner">
         <a class="dh-user-logo" href="<?= h(appUrl('index.php')) ?>">
-            <img src="<?= h(appUrl('image/logo.jpeg')) ?>" alt="" width="42" height="42">
+            <img src="<?= h(appUrl('image/logo.jpg')) ?>" alt="" width="42" height="42">
             <span>DunkHome <strong>Kicks</strong></span>
         </a>
         <?php if ($userNavLoggedIn && $userNavEmail !== ''): ?>
@@ -22,7 +22,7 @@ $userNavCartCount = array_sum(array_map('intval', $userNavCart));
         <nav class="dh-user-links" id="navLinks" aria-label="Main navigation">
             <div class="dh-user-drawer-head">
                 <a class="dh-user-drawer-logo" href="<?= h(appUrl('User/Home.php')) ?>">
-                    <img src="<?= h(appUrl('image/logo.jpeg')) ?>" alt="" width="40" height="40">
+                    <img src="<?= h(appUrl('image/logo.jpg')) ?>" alt="" width="40" height="40">
                     <span>DunkHome <strong>Kicks</strong></span>
                 </a>
                 <button type="button" class="dh-user-drawer-theme" id="drawerThemeToggle" aria-label="Switch theme">☀️</button>

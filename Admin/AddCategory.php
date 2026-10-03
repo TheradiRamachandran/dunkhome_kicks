@@ -139,7 +139,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
     <header class="admin-topbar" id="adminSidebar">
         <a class="admin-brand" href="<?= h(appUrl('Admin/AdminDashboard.php')) ?>">
-            <img src="image/logo.jpeg" alt="">
+            <img src="image/logo.jpg" alt="">
             <div class="brand-name">dunkhome_<span>kicks</span></div>
         </a>
         <div class="admin-nav-title">Administration</div>
@@ -246,3 +246,4 @@ categoryImageInput.addEventListener('change', () => {
 </script>
 </body>
 </html>
+

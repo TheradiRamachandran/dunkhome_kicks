@@ -1201,7 +1201,7 @@ if ($message === '' && !empty($_SESSION['admin_signup_success'])) {
 
     <header class="topbar">
         <a class="brand" href="index.php" aria-label="DunkHome Kicks home">
-            <img class="brand-logo" src="image/logo.jpeg" alt="DunkHome Kicks">
+            <img class="brand-logo" src="image/logo.jpg" alt="DunkHome Kicks">
             <span class="brand-name">dunkhome_<span>kicks</span></span>
         </a>
 
@@ -2021,3 +2021,4 @@ document.addEventListener('DOMContentLoaded', () => {
     <script src="assets/dunkhome-ui.js?v=20261001-loader4" defer></script>
 </body>
 </html>
+

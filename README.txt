@@ -8,7 +8,7 @@ UI PRESERVED
 - Existing green/black visual language is retained.
 - Theme toggle is available at the top of pages and persists through localStorage.
 - Page transitions are handled by assets/dunkhome-ui.js.
-- Browser favicon references image/logo.jpeg on all user-facing PHP pages.
+- Browser favicon references image/logo.jpg on all user-facing PHP pages.
 
 ENHANCEMENTS
 - AddProduct.php: admin-only product creation with name, category, price, description and exactly 3 product photos. No quantity field is used.
@@ -54,7 +54,7 @@ DATABASE
 - Products table is created automatically by db.php.
 
 LOGO
-- image/logo.jpeg is included as a fallback file because the supplied file set did not include the original image asset. Replace it with your original image/logo.jpeg to use your exact logo without changing any PHP.
+- image/logo.jpg is included as a fallback file because the supplied file set did not include the original image asset. Replace it with your original image/logo.jpg to use your exact logo without changing any PHP.
 
 RUN
 1. Put the project inside your PHP server folder (XAMPP htdocs, WAMP www, etc.).
@@ -62,3 +62,4 @@ RUN
 3. Verify db.php credentials.
 4. Make uploads/products writable by PHP.
 5. Configure PHP mail/SMTP for OTP delivery.
+

@@ -17,7 +17,7 @@ $footerYear = date('Y');
         <div class="dk-footer-main">
             <div class="dk-footer-brand">
                 <a class="dk-footer-logo" href="<?= h(appUrl('index.php')) ?>">
-                    <img src="<?= h(appUrl('image/logo.jpeg')) ?>" alt="" width="48" height="48" loading="lazy">
+                    <img src="<?= h(appUrl('image/logo.jpg')) ?>" alt="" width="48" height="48" loading="lazy">
                     <span>DunkHome <strong>Kicks</strong></span>
                 </a>
                 <p>Find your next favorite pair. Discover sneakers made for everyday movement, personal style and your own rotation.</p>
@@ -65,3 +65,4 @@ $footerYear = date('Y');
         </div>
     </div>
 </footer>
+

@@ -47,7 +47,7 @@ $adminInitials = strtoupper(substr((string) (preg_replace('/[^a-zA-Z0-9]/', '', 
         <button class="admin-mobile-action" id="reviewsRefreshButton" type="button" title="Reload page" aria-label="Reload page"><i class="fa-solid fa-rotate-right"></i></button>
     </div>
     <header class="admin-topbar" id="adminSidebar">
-        <a class="admin-brand" href="<?= h(appUrl('Admin/AdminDashboard.php')) ?>"><img src="image/logo.jpeg" alt=""><div class="brand-name">dunkhome_<span>kicks</span></div></a>
+        <a class="admin-brand" href="<?= h(appUrl('Admin/AdminDashboard.php')) ?>"><img src="image/logo.jpg" alt=""><div class="brand-name">dunkhome_<span>kicks</span></div></a>
         <div class="admin-nav-title">Administration</div>
         <nav class="admin-nav-links"><?php $adminNavigationShowThemeToggle = false; require __DIR__ . '/../includes/nav.php'; ?></nav>
         <div class="admin-sidebar-identity"><div class="admin-sidebar-avatar"><?= h($adminInitials) ?></div><div class="admin-sidebar-user"><strong><?= h($adminEmail) ?></strong><span>Administrator</span></div></div>
@@ -66,3 +66,4 @@ $adminInitials = strtoupper(substr((string) (preg_replace('/[^a-zA-Z0-9]/', '', 
 <script>document.getElementById('reviewsRefreshButton')?.addEventListener('click', () => window.location.reload());</script>
 </body>
 </html>
+

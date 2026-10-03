@@ -2183,7 +2183,7 @@ body.light .live-status { color:#62746a; }
         <a href="<?= h(appUrl('Admin/AdminDashboard.php')) ?>" class="brand" aria-label="Dashboard home">
 
             <img
-                src="image/logo.jpeg"
+                src="image/logo.jpg"
                 alt="DunkHome Kicks"
                 class="logo"
             >

@@ -211,7 +211,7 @@ $emailInput = (string) ($_SESSION['admin_reset_email'] ?? $emailInput);
 <body>
 <div class="page">
     <header class="topbar">
-        <a class="brand" href="<?= h(appUrl('index.php')) ?>" aria-label="DunkHome Kicks home"><img class="brand-logo" src="image/logo.jpeg" alt=""><span class="brand-name">dunkhome_<span>kicks</span></span></a>
+        <a class="brand" href="<?= h(appUrl('index.php')) ?>" aria-label="DunkHome Kicks home"><img class="brand-logo" src="image/logo.jpg" alt=""><span class="brand-name">dunkhome_<span>kicks</span></span></a>
     </header>
     <main>
         <section class="auth-shell" aria-label="Admin password recovery">
@@ -277,3 +277,4 @@ $emailInput = (string) ($_SESSION['admin_reset_email'] ?? $emailInput);
 <script src="assets/dunkhome-ui.js?v=20261001-loader4" defer></script>
 </body>
 </html>
+
