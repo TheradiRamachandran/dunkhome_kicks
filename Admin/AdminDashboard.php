@@ -95,17 +95,26 @@ function formatDate(string $date): string
 
 function loadDashboardOrderData(mysqli $conn): array
 {
-    $totalColumn = tableHasColumn($conn, 'orders', 'total') ? 'total' : 'total_amount';
-    $codeExpression = tableHasColumn($conn, 'orders', 'order_code') ? 'order_code' : 'CAST(id AS CHAR)';
     $stats = ['total' => 0, 'pending' => 0, 'delivered' => 0, 'income' => 0.0];
-    $result = $conn->query(
-        "SELECT COUNT(*) AS total,
-                COALESCE(SUM(status = 'Pending'), 0) AS pending,
-                COALESCE(SUM(status = 'Delivered'), 0) AS delivered,
-                COALESCE(SUM(CASE WHEN status = 'Delivered' THEN {$totalColumn} ELSE 0 END), 0) AS income
-         FROM orders"
-    );
-    if ($result) {
+    $orders = [];
+    $errorMessage = '';
+
+    try {
+        $totalColumn = tableHasColumn($conn, 'orders', 'total') ? 'total' : 'total_amount';
+        $codeExpression = tableHasColumn($conn, 'orders', 'order_code') ? 'order_code' : 'CAST(id AS CHAR)';
+        $result = $conn->query(
+            "SELECT COUNT(*) AS total,
+                    COALESCE(SUM(status = 'Pending'), 0) AS pending,
+                    COALESCE(SUM(status = 'Delivered'), 0) AS delivered,
+                    COALESCE(SUM(CASE WHEN status = 'Delivered' THEN {$totalColumn} ELSE 0 END), 0) AS income
+             FROM orders"
+        );
+        if (!$result) {
+            $errorMessage = $conn->error;
+            error_log('Dashboard order statistics query failed: ' . $errorMessage);
+            return ['stats' => $stats, 'orders' => $orders, 'error' => true, 'error_message' => $errorMessage];
+        }
+
         $row = $result->fetch_assoc();
         $stats = [
             'total' => (int) ($row['total'] ?? 0),
@@ -113,42 +122,59 @@ function loadDashboardOrderData(mysqli $conn): array
             'delivered' => (int) ($row['delivered'] ?? 0),
             'income' => (float) ($row['income'] ?? 0),
         ];
-    }
 
-    $orders = [];
-    $result = $conn->query(
-        'SELECT id, ' . $codeExpression . ' AS order_code, customer_name, ' . $totalColumn . ' AS total, status, created_at
-         FROM orders ORDER BY created_at DESC LIMIT 8'
-    );
-    if ($result) {
+        $result = $conn->query(
+            'SELECT id, ' . $codeExpression . ' AS order_code, customer_name, ' . $totalColumn . ' AS total, status, created_at
+             FROM orders ORDER BY created_at DESC LIMIT 8'
+        );
+        if (!$result) {
+            $errorMessage = $conn->error;
+            error_log('Dashboard recent orders query failed: ' . $errorMessage);
+            return ['stats' => $stats, 'orders' => $orders, 'error' => true, 'error_message' => $errorMessage];
+        }
+
         while ($row = $result->fetch_assoc()) {
             $orders[] = $row;
         }
+    } catch (mysqli_sql_exception $exception) {
+        $errorMessage = $exception->getMessage();
+        error_log('Dashboard order data query failed: ' . $errorMessage);
+        return ['stats' => $stats, 'orders' => $orders, 'error' => true, 'error_message' => $errorMessage];
     }
 
-    return ['stats' => $stats, 'orders' => $orders];
+    return ['stats' => $stats, 'orders' => $orders, 'error' => false, 'error_message' => ''];
 }
 
 /* =========================================================
    VERIFY ADMIN
    ========================================================= */
 
-$stmt = $conn->prepare(
-    "SELECT id, email, created_at
-     FROM admins
-     WHERE id = ?
-     LIMIT 1"
-);
-
-if (!$stmt) {
-    die('Unable to verify administrator account.');
+$adminQuery = 'SELECT id, email, created_at FROM admins WHERE id = ? LIMIT 1';
+try {
+    $stmt = $conn->prepare($adminQuery);
+} catch (mysqli_sql_exception $exception) {
+    error_log('Dashboard admin lookup prepare failed: ' . $exception->getMessage());
+    http_response_code(503);
+    exit('Dashboard is temporarily unavailable. Check the hosting PHP error log.');
 }
 
-$stmt->bind_param('i', $adminId);
-$stmt->execute();
+if (!$stmt) {
+    error_log('Dashboard admin lookup prepare failed: ' . $conn->error);
+    http_response_code(503);
+    exit('Dashboard is temporarily unavailable. Check the hosting PHP error log.');
+}
 
-$result = $stmt->get_result();
-$currentAdmin = $result ? $result->fetch_assoc() : null;
+try {
+    $stmt->bind_param('i', $adminId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $currentAdmin = $result ? $result->fetch_assoc() : null;
+} catch (mysqli_sql_exception $exception) {
+    $stmt->close();
+    error_log('Dashboard admin lookup failed: ' . $exception->getMessage());
+    http_response_code(503);
+    exit('Dashboard is temporarily unavailable. Check the hosting PHP error log.');
+}
 
 $stmt->close();
 
@@ -171,6 +197,15 @@ $recentOrders = $dashboardData['orders'];
 if (($_GET['action'] ?? '') === 'live_orders') {
     header('Content-Type: application/json; charset=utf-8');
     header('Cache-Control: no-store, private');
+    if (!empty($dashboardData['error'])) {
+        http_response_code(503);
+        echo json_encode([
+            'status' => 'error',
+            'message' => 'Order data is temporarily unavailable.',
+        ]);
+        exit;
+    }
+
     echo json_encode([
         'status' => 'success',
         'stats' => $orderStats,
@@ -2293,6 +2328,12 @@ body.light .live-status { color:#62746a; }
         </header>
 
         <main class="content">
+
+            <?php if (!empty($dashboardData['error'])): ?>
+                <p role="alert" style="margin:20px 0;padding:14px 18px;border:1px solid #a94b4b;border-radius:12px;background:#351919;color:#ffdada">
+                    Order data could not be loaded: <?= e((string) ($dashboardData['error_message'] ?? 'Unknown database error.')) ?>
+                </p>
+            <?php endif; ?>
 
             <!-- =================================================
                  HERO

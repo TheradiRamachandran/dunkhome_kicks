@@ -52,6 +52,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $message = 'A six-digit code was sent. It will expire in 10 minutes.';
                             $messageType = 'success';
                         } else {
+                            unset(
+                                $_SESSION['admin_reset_otp_hash'],
+                                $_SESSION['admin_reset_otp_expires_at'],
+                                $_SESSION['admin_reset_otp_attempts'],
+                                $_SESSION['admin_reset_account_id']
+                            );
                             $message = (string) ($delivery['message'] ?? 'Unable to send the verification code.');
                         }
                     }
@@ -277,4 +283,3 @@ $emailInput = (string) ($_SESSION['admin_reset_email'] ?? $emailInput);
 <script src="assets/dunkhome-ui.js?v=20261001-loader4" defer></script>
 </body>
 </html>
-

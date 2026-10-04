@@ -223,7 +223,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 . '<p style="margin:24px 0"><a href="' . $safeTrackUrl . '" style="display:inline-block;padding:13px 18px;border-radius:999px;background:#70d99a;color:#082013;font-weight:bold;text-decoration:none">Track this booking</a></p>'
                 . '</main></body></html>';
 
-            $adminEmail = trim((string) (getenv('DUNKHOME_ORDER_ADMIN_EMAIL') ?: 'theradimuthu.r@gmail.com'));
+            $adminEmail = trim((string) (getenv('DUNKHOME_ORDER_ADMIN_EMAIL') ?: 'Dunkhomekicks@gmail.com'));
             $customerEmailResult = ['status' => 'error', 'message' => 'Customer email notification could not be attempted.'];
             $adminEmailResult = ['status' => 'error', 'message' => 'Admin email notification could not be attempted.'];
             $whatsAppResult = ['status' => 'error', 'message' => 'WhatsApp notification could not be attempted.'];

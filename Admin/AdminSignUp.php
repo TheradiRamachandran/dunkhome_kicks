@@ -66,6 +66,7 @@ function adminBootstrapAllowed(mysqli $conn): bool
 {
     $result = $conn->query('SELECT COUNT(*) AS total FROM admins');
     if (!$result) {
+        error_log('DunkHome first-admin setup could not check the admins table: ' . $conn->error);
         return false;
     }
 
@@ -74,11 +75,7 @@ function adminBootstrapAllowed(mysqli $conn): bool
         return false;
     }
 
-    return in_array(
-        (string) ($_SERVER['REMOTE_ADDR'] ?? ''),
-        ['127.0.0.1', '::1', '::ffff:127.0.0.1'],
-        true
-    );
+    return true;
 }
 
 /*
@@ -114,17 +111,12 @@ if (($_POST['action'] ?? '') === 'send_admin_otp') {
     if (!adminBootstrapAllowed($conn)) {
         echo json_encode([
             'status' => 'error',
-            'message' => 'First-admin setup is only available from localhost and only before an admin account exists.'
+            'message' => 'An admin account already exists. Please sign in.'
         ]);
         exit;
     }
 
     $otp = random_int(100000, 999999);
-
-    $_SESSION['admin_signup_otp'] = (string) $otp;
-    $_SESSION['admin_signup_otp_email'] = $email;
-    $_SESSION['admin_signup_otp_expires_at'] = time() + 600;
-    $_SESSION['admin_signup_otp_verified'] = false;
 
     $result = sendOtpEmail($email, $otp);
 
@@ -139,6 +131,11 @@ if (($_POST['action'] ?? '') === 'send_admin_otp') {
         echo json_encode($result);
         exit;
     }
+
+    $_SESSION['admin_signup_otp'] = (string) $otp;
+    $_SESSION['admin_signup_otp_email'] = $email;
+    $_SESSION['admin_signup_otp_expires_at'] = time() + 600;
+    $_SESSION['admin_signup_otp_verified'] = false;
 
     echo json_encode([
         'status' => 'success',
@@ -219,7 +216,7 @@ if (
     } elseif (adminEmailExists($conn, $email)) {
         $message = 'An admin account with this email already exists.';
     } elseif (!adminBootstrapAllowed($conn)) {
-        $message = 'First-admin setup is only available from localhost and only before an admin account exists.';
+        $message = 'An admin account already exists. Please sign in.';
     } elseif (
         !isset(
             $_SESSION['admin_signup_otp_verified'],
@@ -1644,9 +1641,7 @@ document.addEventListener('DOMContentLoaded', () => {
         buttonLoading(sendOtpBtn, true);
 
         try {
-            const data = await postAction('send_admin_otp', {
-                email
-            });
+            const data = await postAction('send_admin_otp', { email });
 
             if (data.status !== 'success') {
                 throw new Error(data.message || 'Unable to send admin verification code.');
@@ -1825,9 +1820,7 @@ document.addEventListener('DOMContentLoaded', () => {
             '<i class="fa-solid fa-spinner fa-spin"></i>';
 
         try {
-            const data = await postAction('send_admin_otp', {
-                email
-            });
+            const data = await postAction('send_admin_otp', { email });
 
             if (data.status !== 'success') {
                 throw new Error(data.message || 'Could not resend the code.');
@@ -2021,4 +2014,3 @@ document.addEventListener('DOMContentLoaded', () => {
     <script src="assets/dunkhome-ui.js?v=20261001-loader4" defer></script>
 </body>
 </html>
-

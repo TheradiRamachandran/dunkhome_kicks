@@ -1,8 +1,8 @@
 <?php
 declare(strict_types=1);
 require_once __DIR__ . '/../session.php';
-$supportEmail = 'theradiramachandran@gmail.com';
-$supportPhone = '9566589111';
+$supportEmail = 'Dunkhomekicks@gmail.com';
+$supportPhone = '7012372216';
 $messageSent = '';
 $messageError = '';
 $contactName = '';

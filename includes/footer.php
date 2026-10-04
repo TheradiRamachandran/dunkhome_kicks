@@ -52,8 +52,8 @@ $footerYear = date('Y');
                 <p>Find your fit. Follow every step. Make every move yours.</p>
                 <a class="dk-footer-note-link" href="<?= h(appUrl('User/Products.php')) ?>">Find your next pair <span aria-hidden="true">→</span></a>
                 <div class="dk-footer-contact">
-                    <a href="tel:+919566589111">+91 9566589111</a>
-                    <a href="mailto:theradiramachandran@gmail.com">theradiramachandran@gmail.com</a>
+                    <a href="tel:+917012372216">+91 7012372216</a>
+                    <a href="mailto:Dunkhomekicks@gmail.com">Dunkhomekicks@gmail.com</a>
                 </div>
             </div>
         </div>
@@ -65,4 +65,3 @@ $footerYear = date('Y');
         </div>
     </div>
 </footer>
-

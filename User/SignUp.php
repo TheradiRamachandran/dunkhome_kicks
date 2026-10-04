@@ -67,17 +67,18 @@ if (($_POST['action'] ?? '') === 'send_otp') {
 
     $otp = random_int(100000, 999999);
 
+    $result = sendOtpEmail($email, $otp);
+
+    if (($result['status'] ?? 'error') !== 'success') {
+        unset($_SESSION['otp'], $_SESSION['otp_email'], $_SESSION['otp_expires_at'], $_SESSION['otp_verified']);
+        echo json_encode($result);
+        exit;
+    }
+
     $_SESSION['otp'] = (string) $otp;
     $_SESSION['otp_email'] = $email;
     $_SESSION['otp_expires_at'] = time() + 600;
     $_SESSION['otp_verified'] = false;
-
-    $result = sendOtpEmail($email, $otp);
-
-    if (($result['status'] ?? 'error') !== 'success') {
-        echo json_encode($result);
-        exit;
-    }
 
     echo json_encode([
         'status' => 'success',

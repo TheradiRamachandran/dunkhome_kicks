@@ -16,11 +16,42 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
     session_start();
 }
 
-$dbHost = getenv('DHK_DB_HOST') ?: 'localhost';
-$dbUser = getenv('DHK_DB_USER') ?: 'root';
-$dbPassword = getenv('DHK_DB_PASS') ?: '';
-$dbName = getenv('DHK_DB_NAME') ?: 'dunkhome_kicks';
-$conn = new mysqli($dbHost, $dbUser, $dbPassword, $dbName);
+$localConfigPath = __DIR__ . '/includes/mail-config.local.php';
+$localConfig = is_file($localConfigPath) ? require $localConfigPath : [];
+if (!is_array($localConfig)) {
+    error_log('DunkHome private configuration file must return an array.');
+    http_response_code(500);
+    exit('Application configuration is invalid.');
+}
+
+$setting = static function (string $name, string $default = '') use ($localConfig): string {
+    $value = getenv($name);
+    if ($value !== false && $value !== '') {
+        return (string) $value;
+    }
+    return (string) ($localConfig[$name] ?? $default);
+};
+
+
+// $dbHost = getenv('DHK_DB_HOST') ?: 'sql204.infinityfree.com';
+// $dbUser = getenv('DHK_DB_USER') ?: 'if0_43077908';
+// $dbPassword = getenv('DHK_DB_PASS') ?: '060kyt3vZqHl4u';
+// $dbName = getenv('DHK_DB_NAME') ?: 'if0_43077908_dunkhome_kicks';
+
+$dbHost = $setting('DHK_DB_HOST')?: 'sql204.infinityfree.com';
+$dbUser = $setting('DHK_DB_USER')?: 'if0_43077908';
+$dbPassword = $setting('DHK_DB_PASS')?: '060kyt3vZqHl4u';
+$dbName = $setting('DHK_DB_NAME')?: 'if0_43077908_dunkhome_kicks';
+// $conn = new mysqli($dbHost, $dbUser, $dbPassword, $dbName);
+
+
+try {
+    $conn = new mysqli($dbHost, $dbUser, $dbPassword, $dbName);
+} catch (mysqli_sql_exception $exception) {
+    error_log('Database connection failed: ' . $exception->getMessage());
+    http_response_code(500);
+    exit('Unable to connect to the database. Check the private database settings.');
+}
 
 if ($conn->connect_error) {
     error_log('Database connection failed: ' . $conn->connect_error);
@@ -74,4 +105,3 @@ $categoryImageColumn = $conn->query("SHOW COLUMNS FROM categories LIKE 'image'")
 if ($categoryImageColumn && $categoryImageColumn->num_rows === 0) {
     $conn->query('ALTER TABLE categories ADD COLUMN image VARCHAR(255) NULL AFTER description');
 }
-

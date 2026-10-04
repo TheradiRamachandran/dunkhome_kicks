@@ -1,10 +1,95 @@
 <?php
 declare(strict_types=1);
 
+function sendDunkHomeEmail(
+  string $recipient,
+  string $subject,
+  string $plainBody,
+  string $htmlBody,
+  ?string $replyTo = null
+): array {
+  $localConfigPath = __DIR__ . '/includes/mail-config.local.php';
+  $localConfig = is_file($localConfigPath) ? require $localConfigPath : [];
+  if (!is_array($localConfig)) {
+    error_log('DunkHome email delivery configuration file must return an array.');
+    return ['status' => 'error', 'message' => 'Email delivery settings are invalid. Check the local mail configuration file.'];
+  }
+  $setting = static function (string $name, string $default = '') use ($localConfig): string {
+    $value = getenv($name);
+    if ($value !== false && $value !== '') {
+      return (string) $value;
+    }
+    return (string) ($localConfig[$name] ?? $default);
+  };
+
+  $from = trim($setting('DUNKHOME_MAIL_FROM', 'Dunkhomekicks@gmail.com'));
+  $host = trim($setting('DUNKHOME_SMTP_HOST', 'smtp.gmail.com'));
+  $username = trim($setting('DUNKHOME_SMTP_USER', $from));
+  $password = $setting('DUNKHOME_SMTP_PASS');
+  $port = filter_var($setting('DUNKHOME_SMTP_PORT', '587'), FILTER_VALIDATE_INT);
+  $security = strtolower(trim($setting('DUNKHOME_SMTP_SECURE', 'tls')));
+
+  if ($password === '') {
+    error_log('DunkHome email delivery is not configured because DUNKHOME_SMTP_PASS is empty.');
+    return ['status' => 'error', 'message' => 'SMTP app password is missing. Set DUNKHOME_SMTP_PASS in the hosting account environment settings and reload PHP.'];
+  }
+
+  if (!filter_var($recipient, FILTER_VALIDATE_EMAIL)
+    || !filter_var($from, FILTER_VALIDATE_EMAIL)
+    || !filter_var($username, FILTER_VALIDATE_EMAIL)
+    || preg_match('/[\r\n]/', $host)
+    || $host === ''
+    || $port === false
+    || $port < 1
+    || $port > 65535
+    || !in_array($security, ['tls', 'ssl'], true)) {
+    error_log('DunkHome email delivery configuration or address is invalid.');
+    return ['status' => 'error', 'message' => 'Email delivery is not configured correctly.'];
+  }
+
+  $autoload = __DIR__ . '/vendor/autoload.php';
+  if (!is_file($autoload)) {
+    error_log('DunkHome email delivery failed because PHPMailer is not installed.');
+    return ['status' => 'error', 'message' => 'PHPMailer is missing. Upload the application vendor directory.'];
+  }
+  require_once $autoload;
+
+  if (!class_exists(\PHPMailer\PHPMailer\PHPMailer::class)) {
+    error_log('DunkHome email delivery failed because PHPMailer could not be loaded.');
+    return ['status' => 'error', 'message' => 'PHPMailer could not be loaded. Reinstall and upload application dependencies.'];
+  }
+
+  try {
+    $mail = new \PHPMailer\PHPMailer\PHPMailer(true);
+    $mail->isSMTP();
+    $mail->Host = $host;
+    $mail->SMTPAuth = true;
+    $mail->Username = $username;
+    $mail->Password = $password;
+    $mail->SMTPSecure = $security === 'ssl'
+      ? \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS
+      : \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
+    $mail->Port = $port;
+    $mail->Timeout = 15;
+    $mail->CharSet = 'UTF-8';
+    $mail->setFrom($from, 'DUNKHOMEKICKS');
+    $mail->addAddress($recipient);
+    $mail->addReplyTo($replyTo !== null ? $replyTo : $from);
+    $mail->isHTML(true);
+    $mail->Subject = $subject;
+    $mail->Body = $htmlBody;
+    $mail->AltBody = $plainBody;
+    $mail->send();
+  } catch (\PHPMailer\PHPMailer\Exception $exception) {
+    error_log('DunkHome email delivery failed: ' . $exception->getMessage());
+    return ['status' => 'error', 'message' => 'SMTP delivery failed. Check the Gmail app password, sender authorization, and SMTP settings.'];
+  }
+
+  return ['status' => 'success', 'message' => 'Email sent successfully.'];
+}
+
 function sendOtpEmail(string $recipient, int $otp, string $purpose = 'verification'): array
 {
-  $from = getenv('DUNKHOME_MAIL_FROM') ?: 'no-reply@dunkhome-kicks.local';
-  $from = preg_replace('/[\r\n]+/', '', $from);
   $isReset = $purpose === 'reset';
   $isPasswordChange = $purpose === 'change_password';
   $subject = $isReset
@@ -27,26 +112,9 @@ function sendOtpEmail(string $recipient, int $otp, string $purpose = 'verificati
     . '<tr><td style="padding:0 32px 28px;text-align:center;color:#74857a;font-size:12px;line-height:1.7">If you did not request this code, ignore this email.<br><span style="color:#d1ddd5">DunkHome Kicks</span></td></tr>'
     . '</table></td></tr></table></body></html>';
 
-  $boundary = 'dhk-' . bin2hex(random_bytes(16));
-  $headers = implode("\r\n", [
-    'From: ' . $from,
-    'Reply-To: ' . $from,
-    'MIME-Version: 1.0',
-    'Content-Type: multipart/alternative; boundary="' . $boundary . '"',
-    'X-Mailer: DunkHome Kicks',
-  ]);
-  $body = '--' . $boundary . "\r\n"
-    . "Content-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: 8bit\r\n\r\n"
-    . $plainMessage . "\r\n\r\n--" . $boundary . "\r\n"
-    . "Content-Type: text/html; charset=UTF-8\r\nContent-Transfer-Encoding: 8bit\r\n\r\n"
-    . $htmlMessage . "\r\n\r\n--" . $boundary . '--';
-
-  if (!mail($recipient, $subject, $body, $headers)) {
-    error_log('DunkHome OTP email failed for ' . $recipient);
-    return [
-      'status' => 'error',
-      'message' => 'We could not send the OTP. Check PHP mail/SMTP configuration.',
-    ];
+  $result = sendDunkHomeEmail($recipient, $subject, $plainMessage, $htmlMessage);
+  if (($result['status'] ?? 'error') !== 'success') {
+    return ['status' => 'error', 'message' => (string) ($result['message'] ?? 'We could not send the OTP. Check the SMTP settings.')];
   }
 
   return ['status' => 'success', 'message' => 'OTP sent successfully.'];
@@ -85,29 +153,10 @@ function sendDunkHomeOrderEmail(string $recipient, string $subject, string $plai
     return ['status' => 'error', 'message' => 'Recipient email address is invalid.'];
   }
 
-  $from = trim((string) (getenv('DUNKHOME_MAIL_FROM') ?: 'no-reply@dunkhome-kicks.local'));
-  if (!filter_var($from, FILTER_VALIDATE_EMAIL) || preg_match('/[\r\n]/', $from)) {
-    error_log('DunkHome order email skipped because the sender address is invalid.');
-    return ['status' => 'error', 'message' => 'Sender email is not configured correctly.'];
-  }
-
-  $boundary = 'dhk-order-' . bin2hex(random_bytes(16));
-  $headers = implode("\r\n", [
-    'From: ' . $from,
-    'Reply-To: ' . $from,
-    'MIME-Version: 1.0',
-    'Content-Type: multipart/alternative; boundary="' . $boundary . '"',
-    'X-Mailer: DunkHome Kicks',
-  ]);
-  $body = '--' . $boundary . "\r\n"
-    . "Content-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: 8bit\r\n\r\n"
-    . $plainBody . "\r\n\r\n--" . $boundary . "\r\n"
-    . "Content-Type: text/html; charset=UTF-8\r\nContent-Transfer-Encoding: 8bit\r\n\r\n"
-    . $htmlBody . "\r\n\r\n--" . $boundary . '--';
-
-  if (!mail($recipient, $subject, $body, $headers)) {
-    error_log('DunkHome order email delivery failed.');
-    return ['status' => 'error', 'message' => 'PHP mail could not accept the message.'];
+  $result = sendDunkHomeEmail($recipient, $subject, $plainBody, $htmlBody);
+  if (($result['status'] ?? 'error') !== 'success') {
+    error_log('DunkHome order email delivery failed: ' . (string) ($result['message'] ?? 'Unknown email error.'));
+    return $result;
   }
 
   return ['status' => 'success', 'message' => 'Email accepted by the configured mail service.'];
@@ -115,16 +164,10 @@ function sendDunkHomeOrderEmail(string $recipient, string $subject, string $plai
 
 function sendDunkHomeContactEmail(string $name, string $email, string $message): array
 {
-  $recipient = 'theradiramachandran@gmail.com';
+  $recipient = 'Dunkhomekicks@gmail.com';
   if (!filter_var($email, FILTER_VALIDATE_EMAIL) || preg_match('/[\r\n]/', $name)) {
     error_log('DunkHome contact message rejected because the submitted sender details are invalid.');
     return ['status' => 'error', 'message' => 'Enter a valid name and email address.'];
-  }
-
-  $from = trim((string) (getenv('DUNKHOME_MAIL_FROM') ?: 'no-reply@dunkhome-kicks.local'));
-  if (!filter_var($from, FILTER_VALIDATE_EMAIL) || preg_match('/[\r\n]/', $from)) {
-    error_log('DunkHome contact message skipped because the sender address is invalid.');
-    return ['status' => 'error', 'message' => 'Email sending is not configured correctly. Please call us instead.'];
   }
 
   $safeName = htmlspecialchars($name, ENT_QUOTES, 'UTF-8');
@@ -140,23 +183,10 @@ function sendDunkHomeContactEmail(string $name, string $email, string $message):
     . '<p style="color:#b7c7bd;line-height:1.7"><strong style="color:#f4f8f5">Name:</strong> ' . $safeName . '<br><strong style="color:#f4f8f5">Email:</strong> ' . $safeEmail . '</p>'
     . '<div style="margin-top:18px;padding:18px;border:1px solid #294637;border-radius:12px;background:#10231a;color:#d9e5dd;line-height:1.7">' . nl2br($safeMessage) . '</div>'
     . '</td></tr></table></body></html>';
-  $boundary = 'dhk-contact-' . bin2hex(random_bytes(16));
-  $headers = implode("\r\n", [
-    'From: ' . $from,
-    'Reply-To: ' . $email,
-    'MIME-Version: 1.0',
-    'Content-Type: multipart/alternative; boundary="' . $boundary . '"',
-    'X-Mailer: DunkHome Kicks',
-  ]);
-  $body = '--' . $boundary . "\r\n"
-    . "Content-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: 8bit\r\n\r\n"
-    . $plainBody . "\r\n\r\n--" . $boundary . "\r\n"
-    . "Content-Type: text/html; charset=UTF-8\r\nContent-Transfer-Encoding: 8bit\r\n\r\n"
-    . $htmlBody . "\r\n\r\n--" . $boundary . '--';
-
-  if (!mail($recipient, $subject, $body, $headers)) {
+  $result = sendDunkHomeEmail($recipient, $subject, $plainBody, $htmlBody, $email);
+  if (($result['status'] ?? 'error') !== 'success') {
     error_log('DunkHome contact message could not be accepted by the configured mail service.');
-    return ['status' => 'error', 'message' => 'We could not send your message right now. Please call us or try again later.'];
+    return $result;
   }
 
   return ['status' => 'success', 'message' => 'Thanks for reaching out. Your message has been sent to our team.'];

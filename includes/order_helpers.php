@@ -64,12 +64,19 @@ function tableHasColumn(mysqli $conn, string $table, string $column): bool
         return false;
     }
 
-    $stmt = $conn->prepare("SHOW COLUMNS FROM `{$table}` LIKE ?");
+    $stmt = $conn->prepare(
+        'SELECT 1
+         FROM information_schema.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE()
+           AND TABLE_NAME = ?
+           AND COLUMN_NAME = ?
+         LIMIT 1'
+    );
     if (!$stmt) {
         return false;
     }
 
-    $stmt->bind_param('s', $column);
+    $stmt->bind_param('ss', $table, $column);
     $stmt->execute();
     $stmt->store_result();
     $exists = $stmt->num_rows > 0;
