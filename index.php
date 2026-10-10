@@ -130,7 +130,7 @@ if ($productResult) {
         name="viewport"
         content="width=device-width, initial-scale=1.0"
     >
-
+    <meta name="google-site-verification" content="T7mOd6kxr5TfX-iRYUphUuPLSJ1Qtsso1l8BW0Ovnr8" />
     <meta
         name="description"
         content="DunkHome Kicks — Step into your style. Discover premium sneakers, streetwear and footwear."
